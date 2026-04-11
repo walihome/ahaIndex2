@@ -9,44 +9,63 @@ import type {
 
 const TABLE = 'display_items';
 
-export async function getLatestDate(): Promise<string | null> {
+// ─── Build-time memo cache ──────────────────────────
+const _cache = new Map<string, any>();
+
+function memo<T>(key: string, fn: () => Promise<T>): () => Promise<T> {
+  return async () => {
+    if (_cache.has(key)) return _cache.get(key) as T;
+    const result = await fn();
+    _cache.set(key, result);
+    return result;
+  };
+}
+
+function memoBy<T>(prefix: string, fn: (arg: string) => Promise<T>): (arg: string) => Promise<T> {
+  return async (arg: string) => {
+    const key = `${prefix}:${arg}`;
+    if (_cache.has(key)) return _cache.get(key) as T;
+    const result = await fn(arg);
+    _cache.set(key, result);
+    return result;
+  };
+}
+
+// ─── Core queries (memoized) ────────────────────────
+
+export const getLatestDate = memo<string | null>('latestDate', async () => {
   const { data } = await supabase
     .from(TABLE)
     .select('snapshot_date')
     .order('snapshot_date', { ascending: false })
     .limit(1);
   return data?.[0]?.snapshot_date ?? null;
-}
+});
 
-export async function getAllDates(): Promise<string[]> {
+export const getAllDates = memo<string[]>('allDates', async () => {
   const { data } = await supabase
     .from(TABLE)
     .select('snapshot_date')
     .order('snapshot_date', { ascending: false });
   if (!data) return [];
   return [...new Set(data.map((r) => r.snapshot_date))];
-}
+});
 
-export async function getItemsByDate(date: string): Promise<ProcessedItem[]> {
+export const getItemsByDate = memoBy<ProcessedItem[]>('itemsByDate', async (date: string) => {
   const { data } = await supabase
     .from(TABLE)
     .select('*')
     .eq('snapshot_date', date)
     .order('rank', { ascending: true });
   return (data as ProcessedItem[]) ?? [];
-}
+});
 
 export async function getItemById(
   date: string,
   pid: string,
 ): Promise<ProcessedItem | null> {
-  const { data } = await supabase
-    .from(TABLE)
-    .select('*')
-    .eq('snapshot_date', date)
-    .eq('processed_item_id', pid)
-    .limit(1);
-  return (data?.[0] as ProcessedItem) ?? null;
+  const items = await getItemsByDate(date);
+  return items.find(i => i.processed_item_id === pid) ?? null;
 }
 
 export async function getItemByPid(
@@ -60,15 +79,14 @@ export async function getItemByPid(
   return (data?.[0] as ProcessedItem) ?? null;
 }
 
-export async function getAllItems(): Promise<ProcessedItem[]> {
-  const dates = await getAllDates();
-  const all: ProcessedItem[] = [];
-  for (const date of dates) {
-    const items = await getItemsByDate(date);
-    all.push(...items);
-  }
-  return all;
-}
+export const getAllItems = memo<ProcessedItem[]>('allItems', async () => {
+  const { data } = await supabase
+    .from(TABLE)
+    .select('*')
+    .order('snapshot_date', { ascending: false })
+    .order('rank', { ascending: true });
+  return (data as ProcessedItem[]) ?? [];
+});
 
 function getWeekNumber(d: Date) {
   const dt = new Date(
@@ -81,7 +99,7 @@ function getWeekNumber(d: Date) {
   );
 }
 
-export async function getGlobalStats(): Promise<GlobalStats> {
+export const getGlobalStats = memo<GlobalStats>('globalStats', async () => {
   const dates = await getAllDates();
   if (dates.length === 0) {
     return { total_editions: 0, total_items: 0, avg_aha_score: 0, peak_aha_score: 0 };
@@ -108,7 +126,7 @@ export async function getGlobalStats(): Promise<GlobalStats> {
     avg_aha_score: dates.length > 0 ? totalScore / dates.length : 0,
     peak_aha_score: peakScore,
   };
-}
+});
 
 export async function getMonthlyArchives(year: number): Promise<MonthlyArchive[]> {
   const dates = await getAllDates();
