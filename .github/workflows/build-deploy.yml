@@ -53,6 +53,18 @@ jobs:
               --metadata "Cache-Control=no-cache" \
               --content-type "text/html; charset=utf-8" \
               $CREDS
+
+            # For directory-style routes (e.g. article/xxx/index.html),
+            # also upload as article/xxx so bare URLs work without trailing slash
+            dir="$(dirname "$rel")"
+            base="$(basename "$rel")"
+            if [ "$base" = "index.html" ] && [ "$dir" != "." ]; then
+              ossutil cp "$f" "oss://amazingindex/$dir" \
+                --force \
+                --metadata "Cache-Control=no-cache" \
+                --content-type "text/html; charset=utf-8" \
+                $CREDS
+            fi
           done
 
           # Other static files (robots.txt, sitemap, favicon, etc.)
@@ -88,11 +100,10 @@ jobs:
           )
           client = Client(config)
 
-          for obj_type, paths in [
-              ('File', 'https://www.amazingindex.com/\nhttps://www.amazingindex.com/index.html'),
-              ('Directory', 'https://www.amazingindex.com/daily/'),
-          ]:
-              req = cdn_models.RefreshObjectCachesRequest(object_path=paths, object_type=obj_type)
-              client.refresh_object_caches(req)
-              print(f"Refreshed {obj_type}: {paths}")
+          req = cdn_models.RefreshObjectCachesRequest(
+              object_path='https://www.amazingindex.com/',
+              object_type='Directory'
+          )
+          client.refresh_object_caches(req)
+          print("Refreshed entire site directory")
           EOF
