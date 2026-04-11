@@ -1,0 +1,38 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Masthead from '../components/Masthead.astro';
+import Footer from '../components/Footer.astro';
+---
+
+<BaseLayout
+  title="页面未找到 | AmazingIndex"
+  description="您访问的页面不存在。"
+  noindex={true}
+>
+  <Masthead />
+  <div class="page-hero">
+    <div style="margin-bottom: 24px;">
+      <a href="/" class="back-link" data-astro-reload>← 返回首页</a>
+    </div>
+    <h1>404 - 页面未找到</h1>
+    <p class="subtitle">您访问的页面不存在或已被移除。</p>
+  </div>
+
+  <main class="page-content">
+    <div class="static-section" style="text-align: center; padding: 60px 20px;">
+      <p>请检查 URL 是否正确，或返回首页浏览最新的 AI 行业简报。</p>
+      <a href="/" style="display: inline-block; margin-top: 24px; padding: 12px 32px; background: var(--ink); color: var(--bg); border-radius: 6px; text-decoration: none; font-size: 14px;" data-astro-reload>返回首页</a>
+    </div>
+  </main>
+  <Footer />
+</BaseLayout>
+
+<style>
+  .back-link {
+    color: var(--ink2);
+    text-decoration: none;
+    font-size: 13px;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--ink); }
+</style>

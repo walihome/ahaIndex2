@@ -16,18 +16,19 @@ const categories = ['全部', ...Array.from(new Set(items.map(item => item.categ
 ---
 
 <BaseLayout
-  title="历史精选 · AmazingIndex"
+  title="历史精选 | AmazingIndex"
   description="AmazingIndex 历史精选：回顾过往最具价值的 AI 行业动态与创新洞察。"
-  canonicalUrl="https://www.amazingindex.com/history"
-  ogTitle="历史精选 · AmazingIndex"
+  canonicalUrl="https://www.amazingindex.com/history/"
+  ogTitle="历史精选 | AmazingIndex"
   ogDescription="AmazingIndex 历史精选：回顾过往最具价值的 AI 行业动态与创新洞察。"
-  ogUrl="https://www.amazingindex.com/history"
+  ogUrl="https://www.amazingindex.com/history/"
 >
   <Masthead items={items} />
   <NavBar categories={categories} />
 
   <div class="layout">
     <main class="main-col">
+      <h1 class="sr-only">历史精选</h1>
       <div class="section-label">历史精选 · History</div>
       <div class="article-list" id="article-list">
         {items.length > 0 ? (
