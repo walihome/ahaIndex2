@@ -1,6 +1,8 @@
 name: Build & Deploy
 
 on:
+  schedule:
+    - cron: '0 22 * * *'
   repository_dispatch:
     types: [build-deploy]
   workflow_dispatch:
