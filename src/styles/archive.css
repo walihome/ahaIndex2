@@ -115,6 +115,8 @@
   transition: all 0.2s;
   position: relative;
   display: block;
+  min-width: 0;
+  overflow: hidden;
 }
 .archive-page .month-cell:hover {
   border-color: var(--accent);
@@ -706,9 +708,14 @@
     padding-left: 36px;
   }
 }
+@media (max-width: 768px) {
+  .archive-page .side-col {
+    display: none;
+  }
+}
 @media (max-width: 560px) {
   .archive-page .layout {
-    padding: 0 12px;
+    padding: 0 14px;
     width: 100%;
     box-sizing: border-box;
     overflow-x: hidden;
@@ -725,53 +732,48 @@
     white-space: nowrap;
     overflow-x: auto;
     padding-bottom: 4px;
-    margin-right: 12px;
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
   .archive-page .breadcrumb::-webkit-scrollbar {
     display: none;
   }
-  .archive-page .archive-year-rail {
-    margin-right: 12px;
-  }
   .archive-page .archive-year-rail-year {
     font-size: 18px;
   }
   .archive-page .month-grid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 4px;
-    width: calc(100% - 12px);
-  }
-  @media (max-width: 400px) {
-    .archive-page .month-grid {
-      grid-template-columns: repeat(3, 1fr);
-    }
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    width: 100%;
   }
   .archive-page .month-cell {
-    padding: 8px 4px 6px;
+    padding: 10px 8px 8px;
+    min-width: 0;
+    overflow: hidden;
   }
   .archive-page .mc-label {
-    font-size: 7px;
-    letter-spacing: 0.5px;
+    font-size: 8px;
+    letter-spacing: 1px;
   }
   .archive-page .mc-score {
-    font-size: 16px;
+    font-size: 18px;
   }
   .archive-page .mc-score-sub {
     font-size: 6px;
     letter-spacing: 0.5px;
   }
+  .archive-page .mc-top {
+    font-size: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .archive-page .mc-count {
-    font-size: 7px;
-    margin-top: 2px;
+    font-size: 8px;
+    margin-top: 4px;
   }
   .archive-page .page-header h1 {
     font-size: 20px;
-    margin-right: 12px;
-  }
-  .archive-page .page-header .sub {
-    margin-right: 12px;
   }
   .archive-page .dh-count,
   .archive-page .dh-bar {
@@ -801,17 +803,15 @@
   }
   .archive-page .dh-top {
     font-size: 11px;
-    margin-right: 8px;
   }
   .archive-page .day-items {
     padding-left: 16px;
-    padding-right: 12px;
+    padding-right: 0;
   }
   .archive-page .month-detail-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
-    padding-right: 12px;
   }
   .archive-page .month-detail-header h2 {
     font-size: 18px;
@@ -835,7 +835,6 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 2px;
-    padding-right: 12px;
   }
   .archive-page .week-stats {
     margin-left: 0;
@@ -844,7 +843,7 @@
   .archive-page .month-summary {
     padding: 14px;
     font-size: 13px;
-    margin: 16px 16px 24px 0;
+    margin: 16px 0 24px;
     line-height: 1.7;
     border-left-width: 4px;
     word-break: break-word;
@@ -852,5 +851,19 @@
   }
   .archive-page .section-divider {
     margin: 16px 0;
+  }
+}
+@media (max-width: 380px) {
+  .archive-page .month-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .archive-page .month-cell {
+    padding: 10px 8px 8px;
+  }
+  .archive-page .mc-score {
+    font-size: 20px;
+  }
+  .archive-page .mc-top {
+    font-size: 10px;
   }
 }
