@@ -71,6 +71,16 @@
   text-transform: uppercase;
   color: var(--ink3);
 }
+.archive-page .page-header .sub .month-back-year {
+  text-transform: none;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s, color 0.15s;
+}
+.archive-page .page-header .sub .month-back-year:hover {
+  border-bottom-color: var(--accent);
+}
 
 .archive-page .year-tabs {
   display: flex;
