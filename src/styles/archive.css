@@ -58,6 +58,9 @@
 .archive-page .page-header {
   margin-bottom: 32px;
 }
+.archive-page .page-header--archive-year {
+  margin-bottom: 12px;
+}
 .archive-page .page-header h1 {
   font-family: var(--fs);
   font-size: 28px;
@@ -82,40 +85,21 @@
   border-bottom-color: var(--accent);
 }
 
-.archive-page .year-tabs {
+.archive-page .archive-year-rail {
   display: flex;
-  gap: 0;
+  justify-content: flex-end;
+  align-items: baseline;
   border-bottom: 1px solid var(--rule);
+  padding-bottom: 10px;
   margin-bottom: 20px;
 }
-.archive-page .year-tab {
+.archive-page .archive-year-rail-year {
   font-family: var(--fd);
-  font-size: 16px;
+  font-size: 22px;
   font-weight: 700;
-  padding: 10px 20px;
-  cursor: pointer;
-  color: var(--inkf);
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-  transition: all 0.2s;
-  letter-spacing: 1px;
-}
-.archive-page .year-tab:hover {
-  color: var(--ink2);
-}
-.archive-page .year-tab.active {
+  letter-spacing: 0.04em;
   color: var(--ink);
-  border-bottom-color: var(--accent);
-}
-
-.archive-page .year-meta {
-  font-size: 10px;
-  letter-spacing: 2px;
-  color: var(--ink3);
-  text-transform: uppercase;
-  margin-bottom: 14px;
+  line-height: 1;
 }
 
 .archive-page .month-grid {
@@ -748,19 +732,11 @@
   .archive-page .breadcrumb::-webkit-scrollbar {
     display: none;
   }
-  .archive-page .year-tabs {
-    overflow-x: auto;
-    white-space: nowrap;
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+  .archive-page .archive-year-rail {
     margin-right: 12px;
   }
-  .archive-page .year-tabs::-webkit-scrollbar {
-    display: none;
-  }
-  .archive-page .year-tab {
-    padding: 8px 14px;
-    font-size: 14px;
+  .archive-page .archive-year-rail-year {
+    font-size: 18px;
   }
   .archive-page .month-grid {
     grid-template-columns: repeat(4, 1fr);
