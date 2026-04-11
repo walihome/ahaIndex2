@@ -24,16 +24,16 @@ const pageDesc = `AmazingIndex ${date} 每日 AI 行业精选简报。基于多�
 <BaseLayout
   title={pageTitle}
   description={pageDesc}
-  canonicalUrl={`https://www.amazingindex.com/daily/${date}/`}
+  canonicalUrl={`https://www.amazingindex.com/daily/${date}`}
   ogTitle={pageTitle}
   ogDescription={pageDesc}
-  ogUrl={`https://www.amazingindex.com/daily/${date}/`}
+  ogUrl={`https://www.amazingindex.com/daily/${date}`}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     "name": pageTitle,
     "description": pageDesc,
-    "url": `https://www.amazingindex.com/daily/${date}/`
+    "url": `https://www.amazingindex.com/daily/${date}`
   }}
 >
   <DailyPage items={items} stats={stats} days={days} date={date} categories={categories} heading={`${date} AI 行业精选简报`} />
