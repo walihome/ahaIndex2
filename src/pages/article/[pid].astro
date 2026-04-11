@@ -1,15 +1,21 @@
 ---
 import ArticleLayout from '../../layouts/ArticleLayout.astro';
+import type { ProcessedItem } from '../../lib/types';
 import { getAllItems, getItemsByDate, getGlobalStats, getDailyArchives } from '../../lib/data';
 
 export async function getStaticPaths() {
   const allItems = await getAllItems();
-  return allItems
-    .filter(item => item.processed_item_id)
-    .map(item => ({
-      params: { pid: item.processed_item_id },
-      props: { item },
-    }));
+  const seen = new Map<string, ProcessedItem>();
+  for (const item of allItems) {
+    if (!item.processed_item_id) continue;
+    if (!seen.has(item.processed_item_id)) {
+      seen.set(item.processed_item_id, item);
+    }
+  }
+  return Array.from(seen.values()).map(item => ({
+    params: { pid: item.processed_item_id },
+    props: { item },
+  }));
 }
 
 const { item } = Astro.props;
