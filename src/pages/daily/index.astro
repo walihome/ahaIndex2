@@ -41,16 +41,14 @@ const pageDesc = '深入探索 AmazingIndex 过去 AI 行业动态的综合数�
           <a href="/" data-astro-reload>首页</a><span class="sep">/</span>历史归档
         </div>
 
-        <div class="page-header">
+        <div class="page-header page-header--archive-year">
           <h1>历史归档</h1>
-          <div class="sub">AI 行业动态的完整记录</div>
         </div>
 
-        <div class="year-tabs">
-          <button class="year-tab active">{currentYear}</button>
+        <div class="archive-year-rail">
+          <span class="archive-year-rail-year">{currentYear}</span>
         </div>
 
-        <div class="year-meta">{currentYear} 年度概览</div>
         <div class="month-grid">
           {Array.from({ length: 12 }, (_, i) => {
             const monthNum = 12 - i;
