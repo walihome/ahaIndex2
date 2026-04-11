@@ -1,0 +1,104 @@
+---
+import type { ProcessedItem, DailyArchive, GlobalStats } from '../lib/types';
+
+interface Props {
+  items?: ProcessedItem[];
+  stats?: GlobalStats | null;
+  days?: DailyArchive[];
+}
+
+const { items = [], stats = null, days = [] } = Astro.props;
+
+const ahaScore = items.length > 0
+  ? (items.reduce((sum, item) => sum + (item.aha_index || 0), 0) / items.length * 100).toFixed(1)
+  : '0.0';
+
+const now = new Date();
+const year = now.getFullYear();
+const month = now.getMonth();
+const firstDay = new Date(year, month, 1).getDay();
+const daysInMonth = new Date(year, month + 1, 0).getDate();
+const today = now.getDate();
+
+const weeks: (number | null)[][] = [];
+let currentWeek: (number | null)[] = Array(7).fill(null);
+for (let i = 0; i < firstDay; i++) {
+  currentWeek[i] = null;
+}
+let currentDay = 1;
+for (let i = firstDay; i < 7; i++) {
+  currentWeek[i] = currentDay++;
+}
+weeks.push([...currentWeek]);
+while (currentDay <= daysInMonth) {
+  currentWeek = Array(7).fill(null);
+  for (let i = 0; i < 7 && currentDay <= daysInMonth; i++) {
+    currentWeek[i] = currentDay++;
+  }
+  weeks.push([...currentWeek]);
+}
+
+function hasEdition(d: number) {
+  const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  return days.some(day => day.snapshot_date === dateStr && day.item_count > 0);
+}
+
+function dateStr(d: number) {
+  return `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+---
+
+<aside class="side-col">
+  <div class="aha-score-card">
+    <div class="score-header">Daily AHA Index</div>
+    <div class="score-display">
+      <span class="score-number">{ahaScore}</span>
+      <div class="score-unit">Absolute Threshold Score</div>
+    </div>
+    <div class="score-chart">
+      <div class="bar" style="height: 45%" title="Mon"></div>
+      <div class="bar" style="height: 60%" title="Tue"></div>
+      <div class="bar" style="height: 38%" title="Wed"></div>
+      <div class="bar" style="height: 72%" title="Thu"></div>
+      <div class="bar" style="height: 55%" title="Fri"></div>
+      <div class="bar" style="height: 68%" title="Sat"></div>
+      <div class="bar today" style="height: 82%" title="Today"></div>
+    </div>
+    <div class="divider"></div>
+    <div class="sidebar-archive">
+      <div class="sidebar-archive-section">
+        <div class="sidebar-archive-title">Archive</div>
+        <table class="mini-cal" style="width: 100%; border-collapse: collapse; font-size: 11px; text-align: center;">
+          <thead>
+            <tr><th>S</th><th>M</th><th>T</th><th>W</th><th>T</th><th>F</th><th>S</th></tr>
+          </thead>
+          <tbody>
+            {weeks.map((week) => (
+              <tr>
+                {week.map((d) => {
+                  if (!d) return <td></td>;
+                  const has = hasEdition(d);
+                  const isToday = d === today;
+                  let className = '';
+                  if (has) className += ' has-ed';
+                  if (isToday) className += ' today-cell';
+                  if (!has && d < today) className += ' empty';
+                  return has
+                    ? <td class={className.trim()}><a href={`/daily/${dateStr(d)}`} style="color: inherit; text-decoration: none;">{d}</a></td>
+                    : <td class={className.trim()}>{d}</td>;
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <a href="/daily" style="display: block; text-align: center; font-size: 10px; letter-spacing: 1px; color: var(--accent); margin-top: 16px; text-decoration: none;">
+          View All {stats?.total_editions || 0} Editions →
+        </a>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <p class="about-text">
+      "AmazingIndex" 是一套基于多维度量化算法的评估系统，旨在发掘当下最具颠覆性与美学价值的创新成果。
+    </p>
+  </div>
+</aside>

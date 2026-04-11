@@ -1,0 +1,166 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Masthead from '../../components/Masthead.astro';
+import NavBar from '../../components/NavBar.astro';
+import Footer from '../../components/Footer.astro';
+import { getGlobalStats, getMonthlyArchives } from '../../lib/data';
+
+const stats = await getGlobalStats();
+const currentYear = new Date().getFullYear();
+const months = await getMonthlyArchives(currentYear);
+
+const MONTH_NAMES = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+const currentMonth = new Date().getMonth() + 1;
+
+const pageTitle = '历史归档 | AmazingIndex';
+const pageDesc = '深入探索 AmazingIndex 过去 AI 行业动态的综合数据库，经过评分和分类，方便您发现。';
+---
+
+<BaseLayout
+  title={pageTitle}
+  description={pageDesc}
+  canonicalUrl="https://www.amazingindex.com/daily"
+  ogTitle={pageTitle}
+  ogDescription={pageDesc}
+  ogUrl="https://www.amazingindex.com/daily"
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": pageTitle,
+    "description": pageDesc,
+    "url": "https://www.amazingindex.com/daily"
+  }}
+>
+  <div class="archive-page">
+    <Masthead />
+    <NavBar />
+
+    <div class="layout">
+      <div class="main-col">
+        <div class="breadcrumb">
+          <a href="/" data-astro-reload>首页</a><span class="sep">/</span>历史归档
+        </div>
+
+        <div class="page-header">
+          <h1>历史归档</h1>
+          <div class="sub">AI 行业动态的完整记录</div>
+        </div>
+
+        <div class="year-tabs">
+          <button class="year-tab active">{currentYear}</button>
+        </div>
+
+        <div class="year-meta">{currentYear} 年度概览</div>
+        <div class="month-grid">
+          {Array.from({ length: 12 }, (_, i) => {
+            const monthNum = 12 - i;
+            const monthData = months.find(m => new Date(m.month).getUTCMonth() + 1 === monthNum);
+            const isFuture = monthNum > currentMonth;
+            const isCurrent = monthNum === currentMonth;
+
+            if (isFuture) {
+              return (
+                <div class="month-cell future">
+                  <div class="mc-label">{MONTH_NAMES[monthNum - 1]}</div>
+                  <div class="mc-score">--</div>
+                  <div class="mc-score-sub">平均 Aha 指数</div>
+                  <div class="mc-count">0 篇</div>
+                  <div class="mc-bar"><div></div><div></div><div></div></div>
+                </div>
+              );
+            }
+
+            if (!monthData) {
+              return (
+                <a href={`/daily/${currentYear}-${String(monthNum).padStart(2, '0')}`} class={`month-cell ${isCurrent ? 'current' : ''}`}>
+                  <div class="mc-label">{MONTH_NAMES[monthNum - 1]}</div>
+                  <div class="mc-score">--</div>
+                  <div class="mc-score-sub">平均 Aha 指数</div>
+                  <div class="mc-count">0 篇</div>
+                  <div class="mc-bar"><div></div><div></div><div></div></div>
+                </a>
+              );
+            }
+
+            return (
+              <a href={`/daily/${currentYear}-${String(monthNum).padStart(2, '0')}`} class={`month-cell ${isCurrent ? 'current' : ''}`}>
+                <div class="mc-label">{MONTH_NAMES[monthNum - 1]}</div>
+                <div class="mc-score">{monthData.avg_aha_score.toFixed(1)}</div>
+                <div class="mc-score-sub">平均指数</div>
+                <div class="mc-top">{monthData.top_story_title}</div>
+                <div class="mc-count">{monthData.item_count} 篇</div>
+                <div class="mc-bar">
+                  <div class="f"></div>
+                  <div class="f"></div>
+                  <div class={monthData.avg_aha_score > 85 ? 'fh' : ''}></div>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      </div>
+
+      <div class="side-col">
+        <div class="side-section">
+          <div class="side-title">全局统计</div>
+          <div class="side-stats">
+            <div class="side-stat">
+              <span class="ss-label">总期数</span>
+              <span class="ss-val">{stats.total_editions}</span>
+            </div>
+            <div class="side-stat">
+              <span class="ss-label">收录文章</span>
+              <span class="ss-val">{stats.total_items.toLocaleString()}</span>
+            </div>
+            <div class="side-stat">
+              <span class="ss-label">历史平均分</span>
+              <span class="ss-val">{stats.avg_aha_score.toFixed(1)}</span>
+            </div>
+            <div class="side-stat">
+              <span class="ss-label">最高得分</span>
+              <span class="ss-val" style="color: var(--accent);">{stats.peak_aha_score.toFixed(1)}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="side-section">
+          <div class="side-title">分数分布</div>
+          <div class="sb-row">
+            <div class="sb-label">90-100</div>
+            <div class="sb-track"><div class="sb-fill high" style="width: 15%;"></div></div>
+            <div class="sb-count">15%</div>
+          </div>
+          <div class="sb-row">
+            <div class="sb-label">80-89</div>
+            <div class="sb-track"><div class="sb-fill mid" style="width: 45%;"></div></div>
+            <div class="sb-count">45%</div>
+          </div>
+          <div class="sb-row">
+            <div class="sb-label">70-79</div>
+            <div class="sb-track"><div class="sb-fill low" style="width: 30%;"></div></div>
+            <div class="sb-count">30%</div>
+          </div>
+          <div class="sb-row">
+            <div class="sb-label">&lt; 70</div>
+            <div class="sb-track"><div class="sb-fill low" style="width: 10%; opacity: 0.3;"></div></div>
+            <div class="sb-count">10%</div>
+          </div>
+        </div>
+
+        <div class="side-section">
+          <div class="side-title">关于归档</div>
+          <div class="about-box">
+            AmazingIndex 历史归档保存了 AI 行业的每日演进。
+            每一期都是最具影响力新闻的快照，由我们的 <strong>Aha Index</strong> 算法进行评分，以在噪音中凸显真正的突破。
+          </div>
+        </div>
+
+        <div class="side-footer">
+          <span>AmazingIndex</span>
+          <span>始于 2024</span>
+        </div>
+      </div>
+    </div>
+    <Footer />
+  </div>
+</BaseLayout>

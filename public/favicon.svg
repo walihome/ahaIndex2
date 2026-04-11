@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <style>
+    .bg   { fill: #1a1612; }
+    .line { stroke: #f0ebe0; }
+    @media (prefers-color-scheme: light) {
+      .bg   { fill: #f0ebe0; }
+      .line { stroke: #1a1612; }
+    }
+  </style>
+  <rect class="bg" width="64" height="64" rx="10"/>
+  <polyline
+    class="line"
+    points="8,46 20,26 30,34 44,14 56,20"
+    stroke-width="5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"/>
+  <circle cx="56" cy="20" r="6.5" fill="#c0392b"/>
+</svg>

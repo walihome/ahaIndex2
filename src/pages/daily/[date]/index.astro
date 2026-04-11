@@ -1,0 +1,86 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Masthead from '../../../components/Masthead.astro';
+import NavBar from '../../../components/NavBar.astro';
+import BriefingCard from '../../../components/BriefingCard.astro';
+import Sidebar from '../../../components/Sidebar.astro';
+import Footer from '../../../components/Footer.astro';
+import { getAllDates, getItemsByDate, getGlobalStats, getDailyArchives } from '../../../lib/data';
+
+export async function getStaticPaths() {
+  const dates = await getAllDates();
+  return dates.map(date => ({ params: { date } }));
+}
+
+const { date } = Astro.params;
+const items = await getItemsByDate(date!);
+const stats = await getGlobalStats();
+
+const now = new Date();
+const days = await getDailyArchives(now.getFullYear(), now.getMonth() + 1);
+
+const categories = ['全部', ...Array.from(new Set(items.map(item => item.category).filter(Boolean) as string[]))];
+
+const pageTitle = `AmazingIndex · ${date} AI 行业精选简报`;
+const pageDesc = `AmazingIndex ${date} 每日 AI 行业精选简报。基于多维度量化算法，为您筛选当日最具价值的 AI 行业动态与创新洞察。`;
+---
+
+<BaseLayout
+  title={pageTitle}
+  description={pageDesc}
+  canonicalUrl={`https://www.amazingindex.com/daily/${date}`}
+  ogTitle={pageTitle}
+  ogDescription={pageDesc}
+  ogUrl={`https://www.amazingindex.com/daily/${date}`}
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": pageTitle,
+    "description": pageDesc,
+    "url": `https://www.amazingindex.com/daily/${date}`
+  }}
+>
+  <Masthead items={items} />
+  <NavBar categories={categories} />
+
+  <div class="layout">
+    <main class="main-col">
+      <div class="section-label">今日精选 · Today's Picks</div>
+      <div class="article-list" id="article-list">
+        {items.length > 0 ? (
+          items.map((item, index) => (
+            <BriefingCard item={item} index={index} date={date} />
+          ))
+        ) : (
+          <div class="loading-state">今日暂无更新</div>
+        )}
+      </div>
+    </main>
+    <Sidebar items={items} stats={stats} days={days} />
+  </div>
+
+  <Footer showArchiveBanner={true} date={date} />
+</BaseLayout>
+
+<script is:inline>
+document.addEventListener('astro:page-load', () => {
+  const tabs = document.querySelectorAll('#nav-tabs .nav-tab');
+  const cards = document.querySelectorAll('#article-list > [data-category]');
+  if (!tabs.length || !cards.length) return;
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const cat = tab.getAttribute('data-category');
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      cards.forEach(card => {
+        if (cat === '全部' || card.getAttribute('data-category') === cat) {
+          card.style.display = '';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+  });
+});
+</script>

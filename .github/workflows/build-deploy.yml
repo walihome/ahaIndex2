@@ -1,0 +1,98 @@
+name: Build & Deploy
+
+on:
+  repository_dispatch:
+    types: [build-deploy]
+  workflow_dispatch:
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Install ossutil
+        run: |
+          curl -Lo ossutil.zip https://gosspublic.alicdn.com/ossutil/v2/2.2.1/ossutil-2.2.1-linux-amd64.zip
+          unzip ossutil.zip
+          chmod +x ossutil-2.2.1-linux-amd64/ossutil
+          sudo mv ossutil-2.2.1-linux-amd64/ossutil /usr/local/bin/ossutil
+
+      - name: Deploy to OSS
+        env:
+          OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+          OSS_ENDPOINT: https://oss-cn-hangzhou.aliyuncs.com
+          OSS_REGION: cn-hangzhou
+        run: |
+          CREDS="--endpoint $OSS_ENDPOINT --access-key-id $OSS_ACCESS_KEY_ID --access-key-secret $OSS_ACCESS_KEY_SECRET --region $OSS_REGION"
+
+          # Static assets (JS/CSS with hashes) - long-term cache
+          ossutil sync ./dist/_astro/ oss://amazingindex/_astro/ \
+            --force \
+            --metadata "Cache-Control=max-age=31536000,immutable" \
+            $CREDS
+
+          # HTML pages - no cache (always serve latest)
+          find ./dist -name "*.html" | while read f; do
+            rel="${f#./dist/}"
+            ossutil cp "$f" "oss://amazingindex/$rel" \
+              --force \
+              --metadata "Cache-Control=no-cache" \
+              --content-type "text/html; charset=utf-8" \
+              $CREDS
+          done
+
+          # Other static files (robots.txt, sitemap, favicon, etc.)
+          for f in ./dist/robots.txt ./dist/favicon.svg ./dist/favicon.ico; do
+            [ -f "$f" ] && ossutil cp "$f" "oss://amazingindex/$(basename $f)" --force $CREDS
+          done
+
+          # Sitemap files
+          find ./dist -name "sitemap*.xml" | while read f; do
+            rel="${f#./dist/}"
+            ossutil cp "$f" "oss://amazingindex/$rel" \
+              --force \
+              --metadata "Cache-Control=max-age=3600" \
+              $CREDS
+          done
+
+      - name: Refresh CDN
+        env:
+          ALIBABA_CLOUD_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
+          ALIBABA_CLOUD_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
+        run: |
+          pip install alibabacloud_cdn20180510 --quiet
+          python3 - <<'EOF'
+          import os
+          from alibabacloud_cdn20180510.client import Client
+          from alibabacloud_cdn20180510 import models as cdn_models
+          from alibabacloud_tea_openapi import models as open_api_models
+
+          config = open_api_models.Config(
+              access_key_id=os.environ['ALIBABA_CLOUD_ACCESS_KEY_ID'],
+              access_key_secret=os.environ['ALIBABA_CLOUD_ACCESS_KEY_SECRET'],
+              endpoint='cdn.aliyuncs.com'
+          )
+          client = Client(config)
+
+          for obj_type, paths in [
+              ('File', 'https://www.amazingindex.com/\nhttps://www.amazingindex.com/index.html'),
+              ('Directory', 'https://www.amazingindex.com/daily/'),
+          ]:
+              req = cdn_models.RefreshObjectCachesRequest(object_path=paths, object_type=obj_type)
+              client.refresh_object_caches(req)
+              print(f"Refreshed {obj_type}: {paths}")
+          EOF

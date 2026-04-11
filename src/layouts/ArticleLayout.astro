@@ -1,0 +1,182 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import type { ProcessedItem } from '../lib/types';
+
+interface Props {
+  item: ProcessedItem;
+  date: string;
+}
+
+const { item, date } = Astro.props;
+
+const title = (item.processed_title || item.title || '无标题') + ' - AmazingIndex';
+const desc = (item.summary || '').slice(0, 150);
+const articleUrl = `https://www.amazingindex.com/daily/${date}/article/${item.processed_item_id}`;
+
+let extra: any = {};
+if (typeof item.extra === 'string') {
+  try { extra = JSON.parse(item.extra); } catch {}
+} else if (item.extra) {
+  extra = item.extra;
+}
+
+let rawMetrics: any = {};
+if (typeof item.raw_metrics === 'string') {
+  try { rawMetrics = JSON.parse(item.raw_metrics); } catch {}
+} else if (item.raw_metrics) {
+  rawMetrics = item.raw_metrics;
+}
+
+const paragraphs = (item.expert_insight || '').split('\n').filter((p: string) => p.trim());
+const dateStr = item.snapshot_date ? item.snapshot_date.replace(/-/g, '.') : '';
+const backUrl = `/daily/${date}`;
+
+function formatNumber(num: number) {
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+  return String(num);
+}
+---
+
+<BaseLayout
+  title={title}
+  description={desc}
+  canonicalUrl={articleUrl}
+  ogTitle={item.processed_title || item.title || '无标题'}
+  ogDescription={desc}
+  ogUrl={articleUrl}
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "headline": item.processed_title || item.title || '无标题',
+    "description": desc,
+    "url": articleUrl,
+    "datePublished": item.created_at || item.snapshot_date,
+    "publisher": { "@type": "Organization", "name": "AmazingIndex" }
+  }}
+>
+  <div class="backdrop" data-back-url={backUrl}>
+    <div class="modal" transition:animate="slide">
+      <div class="drag-handle"></div>
+
+      <div class="modal-header">
+        <div class="modal-topbar">
+          <div class="tag-row">
+            {item.content_type && <span class="tag">#{item.content_type.toUpperCase()}</span>}
+          </div>
+          <button class="close-btn" aria-label="Close">×</button>
+        </div>
+
+        <h2 class="modal-title">{item.processed_title || item.title || '无标题'}</h2>
+
+        <div class="modal-meta">
+          {item.source_name && <span class="meta-text">{item.source_name.toUpperCase()}</span>}
+          {item.source_name?.includes('GitHub') && rawMetrics.stars !== undefined && (
+            <span class="meta-text"><span class="meta-star-icon">★</span> {formatNumber(rawMetrics.stars)}</span>
+          )}
+          {item.source_name?.includes('GitHub') && rawMetrics.forks !== undefined && (
+            <span class="meta-text">Fork {formatNumber(rawMetrics.forks)}</span>
+          )}
+          {item.source_name?.includes('GitHub') && extra.language && (
+            <span class="meta-text">{extra.language}</span>
+          )}
+          {(item.source_name?.includes('HackerNews')) && rawMetrics.score !== undefined && (
+            <span class="meta-text">▲ {formatNumber(rawMetrics.score)}</span>
+          )}
+          {(item.source_name?.includes('HackerNews')) && rawMetrics.comments !== undefined && (
+            <span class="meta-text">💬 {formatNumber(rawMetrics.comments)}</span>
+          )}
+          {(item.source_name?.includes('Twitter') || item.source_name?.includes('X')) && rawMetrics.tweet_count !== undefined && (
+            <span class="meta-text">{formatNumber(rawMetrics.tweet_count)} tweets</span>
+          )}
+          {dateStr && <span class="meta-date">{dateStr}</span>}
+        </div>
+      </div>
+
+      <div class="modal-body">
+        {item.summary && <p class="summary">{item.summary}</p>}
+
+        {extra?.description && (
+          <p class="modal-description-en">{extra.description}</p>
+        )}
+
+        {item.content_type === 'repo' && extra?.readme_images?.length > 0 && (
+          <div style="margin-bottom: 24px;" class="repo-cover-wrap">
+            <img
+              src={extra.readme_images[0]}
+              alt="封面图"
+              loading="lazy"
+              width="800"
+              height="400"
+              style="width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border);"
+              onerror="this.parentElement.style.display='none'"
+            />
+          </div>
+        )}
+
+        <div class="insight-block">
+          <div class="insight-text">
+            <em style="display: block; margin-bottom: 8px;">Editor's Note:</em>
+            {paragraphs.length > 0
+              ? paragraphs.map((p: string) => <p class="insight-paragraph">{p}</p>)
+              : <p class="insight-paragraph">暂无专家洞察</p>
+            }
+          </div>
+        </div>
+
+        {item.content_type === 'repo' && extra?.star_history_url && (
+          <div style="margin-bottom: 24px;" class="star-history-wrap">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 8px; font-weight: 600;">STAR HISTORY</div>
+            <img
+              src={extra.star_history_url}
+              alt="Star History"
+              loading="lazy"
+              width="800"
+              height="400"
+              style="width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border);"
+              onerror="this.parentElement.style.display='none'"
+            />
+          </div>
+        )}
+      </div>
+
+      <div class="modal-footer">
+        <button class="close-footer-btn" aria-label="Close">×</button>
+        {(item.original_url || item.url) && (
+          <a
+            href={item.original_url || item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn-primary"
+            data-item-id={item.processed_item_id}
+            data-snapshot-date={item.snapshot_date}
+            data-event="click_original"
+          >
+            查看原文 →
+          </a>
+        )}
+      </div>
+    </div>
+  </div>
+
+  <script is:inline>
+    document.addEventListener('astro:page-load', () => {
+      const backdrop = document.querySelector('.backdrop');
+      const closeBtns = document.querySelectorAll('.close-btn, .close-footer-btn');
+      if (!backdrop) return;
+
+      function goBack() {
+        const backUrl = backdrop.getAttribute('data-back-url');
+        if (document.referrer && document.referrer.includes('/daily/')) {
+          history.back();
+        } else if (backUrl) {
+          window.location.href = backUrl;
+        }
+      }
+
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) goBack();
+      });
+      closeBtns.forEach((btn) => btn.addEventListener('click', goBack));
+    });
+  </script>
+</BaseLayout>

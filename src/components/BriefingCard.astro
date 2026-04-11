@@ -1,0 +1,97 @@
+---
+import type { ProcessedItem } from '../lib/types';
+
+interface Props {
+  item: ProcessedItem;
+  index: number;
+  date?: string;
+  showDate?: boolean;
+}
+
+const { item, index, date, showDate } = Astro.props;
+
+const isFeatured = index === 0 && !showDate;
+const numStr = String(index + 1).padStart(3, '0');
+
+let displayLeft = numStr;
+if (showDate && item.snapshot_date) {
+  const parts = item.snapshot_date.split('-');
+  if (parts.length === 3) {
+    displayLeft = `${parts[1]}.${parts[2]}`;
+  } else {
+    displayLeft = item.snapshot_date;
+  }
+}
+
+const title = item.processed_title || item.title || '无标题';
+const description = item.summary || '无摘要';
+const category = item.tags && item.tags.length > 0 ? item.tags[0] : '综合';
+const tags = item.tags ? item.tags.slice(1) : [];
+
+const articleUrl = date
+  ? `/daily/${date}/article/${item.processed_item_id}`
+  : (item.snapshot_date ? `/daily/${item.snapshot_date}/article/${item.processed_item_id}` : '#');
+---
+
+{isFeatured ? (
+  <a href={articleUrl} class="article featured" style="position: relative; text-decoration: none; color: inherit;"
+    data-item-id={item.processed_item_id}
+    data-snapshot-date={item.snapshot_date}
+    data-category={item.category}
+  >
+    <span class="article-num">NO. {numStr}</span>
+    <div class="featured-accent"></div>
+    <h2 class="article-title">{title}</h2>
+    <p class="article-desc">{description}</p>
+    <div class="article-meta">
+      <div class="flex items-center gap-2 flex-wrap">
+        <span class="tag primary">{category}</span>
+        {tags.map((tag) => (
+          <span class="tag">{tag}</span>
+        ))}
+      </div>
+      <div class="article-extra">
+        {item.source_name && (
+          <span class="article-source-name">{item.source_name}</span>
+        )}
+        {item.display_metrics?.items?.filter(m => m.label !== '📖 来源').map((metric) => (
+          <span class="article-metric">
+            <span class="metric-label">{metric.label}</span>
+            <span class="metric-value">{metric.value}</span>
+          </span>
+        ))}
+      </div>
+    </div>
+  </a>
+) : (
+  <a href={articleUrl} class="article" style="position: relative; text-decoration: none; color: inherit;"
+    data-item-id={item.processed_item_id}
+    data-snapshot-date={item.snapshot_date}
+    data-category={item.category}
+  >
+    <div class="article-num">{displayLeft}</div>
+    <div class="article-body">
+      <h2 class="article-title">{title}</h2>
+      <p class="article-desc">{description}</p>
+      <div class="article-meta">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="tag primary">{category}</span>
+          {tags.slice(0, 2).map((tag) => (
+            <span class="tag">{tag}</span>
+          ))}
+        </div>
+        <div class="article-extra">
+          {item.source_name && (
+            <span class="article-source-name">{item.source_name}</span>
+          )}
+          {item.display_metrics?.items?.filter(m => m.label !== '📖 来源').map((metric) => (
+            <span class="article-metric">
+              <span class="metric-label">{metric.label}</span>
+              <span class="metric-value">{metric.value}</span>
+            </span>
+          ))}
+        </div>
+      </div>
+    </div>
+  </a>
+)}

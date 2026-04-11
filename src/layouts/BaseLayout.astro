@@ -1,0 +1,85 @@
+---
+import { ClientRouter } from 'astro:transitions';
+import '../styles/global.css';
+import '../styles/archive.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  canonicalUrl?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogUrl?: string;
+  ogImage?: string;
+  jsonLd?: Record<string, any>;
+}
+
+const {
+  title = 'AmazingIndex · 每日 AI 行业精选简报',
+  description = 'AmazingIndex 基于多维度量化算法，每日从数十个来源精选最值得关注的 AI 行业动态，过滤噪音，直达洞察。',
+  canonicalUrl = 'https://www.amazingindex.com/',
+  ogTitle = 'AmazingIndex - 信息塑造认知',
+  ogDescription = '信息塑造认知， 基于多维度量化算法，每日精选最值得关注的 AI 行业动态。',
+  ogUrl = 'https://www.amazingindex.com/',
+  ogImage = 'https://www.amazingindex.com/og/amazingindex-og.jpg',
+  jsonLd,
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="keywords" content="AI简报, 人工智能, AI行业动态, AI日报, AmazingIndex" />
+    <link rel="canonical" href={canonicalUrl} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={ogTitle} />
+    <meta property="og:description" content={ogDescription} />
+    <meta property="og:url" content={ogUrl} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:site_name" content="AmazingIndex" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:title" content={ogTitle} />
+    <meta name="twitter:description" content={ogDescription} />
+
+    {jsonLd && (
+      <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+    )}
+
+    <script is:inline type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "AmazingIndex",
+      "url": "https://www.amazingindex.com",
+      "description": "每日 AI 行业精选简报，基于多维度量化算法筛选最值得关注的内容。",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://www.amazingindex.com/?q={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    })} />
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+    <script is:inline async src="https://www.googletagmanager.com/gtag/js?id=G-HXX784QFN0"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-HXX784QFN0');
+    </script>
+
+    <ClientRouter />
+  </head>
+  <body>
+    <slot />
+    <script src="../scripts/tracking.ts"></script>
+  </body>
+</html>

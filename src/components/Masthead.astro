@@ -1,0 +1,109 @@
+---
+import type { ProcessedItem } from '../lib/types';
+
+interface Props {
+  items?: ProcessedItem[];
+}
+
+const { items = [] } = Astro.props;
+
+const displayDate = items.length > 0 && items[0].snapshot_date
+  ? new Date(items[0].snapshot_date + 'T00:00:00')
+  : new Date();
+
+const year = displayDate.getFullYear();
+const month = String(displayDate.getMonth() + 1).padStart(2, '0');
+const day = String(displayDate.getDate()).padStart(2, '0');
+
+const ahaScore = items.length > 0
+  ? (items.reduce((sum, item) => sum + (item.aha_index || 0), 0) / items.length * 100).toFixed(1)
+  : '0.0';
+
+let scarcity = 0, timeliness = 0, impact = 0;
+if (items.length > 0) {
+  let sSum = 0, tSum = 0, iSum = 0;
+  let count = 0;
+  items.forEach(item => {
+    if (item.raw_metrics && typeof item.raw_metrics === 'object') {
+      sSum += item.raw_metrics.scarcity || (item.aha_index * 100 * 1.1);
+      tSum += item.raw_metrics.timeliness || (item.aha_index * 100 * 0.9);
+      iSum += item.raw_metrics.impact || (item.aha_index * 100 * 1.05);
+    } else {
+      sSum += (item.aha_index * 100 * 1.1);
+      tSum += (item.aha_index * 100 * 0.9);
+      iSum += (item.aha_index * 100 * 1.05);
+    }
+    count++;
+  });
+  scarcity = Math.min(100, Math.round(sSum / count));
+  timeliness = Math.min(100, Math.round(tSum / count));
+  impact = Math.min(100, Math.round(iSum / count));
+}
+---
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="masthead-logo">
+      <a href="/" class="logo" style="text-decoration: none;" data-astro-reload>
+        <svg class="logo-icon" viewBox="0 0 26 20" fill="none" xmlns="http://www.w3.org/2000/svg" style="stroke: rgba(28,26,23,0.5);">
+          <polyline points="1,17 8,7 14,12 20,3 25,6" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        <span class="logo-text">Amazing<span>Index</span></span>
+      </a>
+    </div>
+
+    <div class="masthead-title">
+      <span class="masthead-tagline">AMAZINGINDEX.COM</span>
+      <span class="masthead-subtitle">每日 AI 简报</span>
+    </div>
+
+    <div class="masthead-meta">
+      <div class="aha-score-mobile">
+        <span class="score-trigger">{ahaScore}</span>
+        <div class="score-tooltip">
+          <div class="tooltip-label">今日 AmazingIndex</div>
+          <div class="tooltip-score">{ahaScore}</div>
+          <div class="tooltip-trend">▲ 2.3% 较昨日</div>
+          <div class="tooltip-divider"></div>
+          <div class="tooltip-dim">
+            <span>稀缺性</span>
+            <div class="dim-bar-container"><div class="dim-bar-fill" style={`width: ${scarcity}%`}></div></div>
+            <span>{scarcity} / 100</span>
+          </div>
+          <div class="tooltip-dim">
+            <span>时效性</span>
+            <div class="dim-bar-container"><div class="dim-bar-fill" style={`width: ${timeliness}%`}></div></div>
+            <span>{timeliness} / 100</span>
+          </div>
+          <div class="tooltip-dim">
+            <span>影响力</span>
+            <div class="dim-bar-container"><div class="dim-bar-fill" style={`width: ${impact}%`}></div></div>
+            <span>{impact} / 100</span>
+          </div>
+          <div class="tooltip-divider"></div>
+          <div class="tooltip-desc">
+            综合今日所有内容的稀缺性、时效性与影响力加权平均得出。满分 100。
+          </div>
+          <a href="/about" class="tooltip-link">查看完整指数说明 →</a>
+        </div>
+      </div>
+      <div class="masthead-vol">
+        VOL. {displayDate.getMonth() + 1}<br/>
+        {year}.{month}.{day}
+      </div>
+    </div>
+  </div>
+</header>
+
+<script is:inline>
+  document.addEventListener('astro:page-load', () => {
+    const trigger = document.querySelector('.score-trigger');
+    const tooltip = document.querySelector('.score-tooltip');
+    if (!trigger || !tooltip) return;
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      tooltip.classList.toggle('show');
+    });
+    document.addEventListener('click', () => tooltip.classList.remove('show'));
+  });
+</script>

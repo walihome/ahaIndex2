@@ -1,0 +1,278 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Masthead from '../../components/Masthead.astro';
+import NavBar from '../../components/NavBar.astro';
+import Footer from '../../components/Footer.astro';
+import { getAllDates, getItemsByDate, getGlobalStats, getMonthlyArchives, getWeeklyArchives, getDailyArchives } from '../../lib/data';
+import type { ProcessedItem } from '../../lib/types';
+
+const MONTH_NAMES = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+
+export async function getStaticPaths() {
+  const dates = await getAllDates();
+  const monthSet = new Set<string>();
+  for (const d of dates) {
+    monthSet.add(d.slice(0, 7));
+  }
+  return [...monthSet].map(month => ({ params: { month } }));
+}
+
+const { month } = Astro.params;
+const [yearStr, monthStr] = month!.split('-');
+const year = parseInt(yearStr, 10);
+const monthNum = parseInt(monthStr, 10);
+
+const stats = await getGlobalStats();
+const months = await getMonthlyArchives(year);
+const weeks = await getWeeklyArchives(year, monthNum);
+const days = await getDailyArchives(year, monthNum);
+
+const dayItemsMap: Record<string, ProcessedItem[]> = {};
+for (const day of days) {
+  const items = await getItemsByDate(day.snapshot_date);
+  dayItemsMap[day.snapshot_date] = items.slice(0, 3);
+}
+
+const monthData = months.find(m => new Date(m.month).getUTCMonth() + 1 === monthNum);
+const currentMonth = new Date().getMonth() + 1;
+const currentYear = new Date().getFullYear();
+
+const weeksWithDays = weeks.map(week => ({
+  ...week,
+  weekDays: days.filter(d => d.snapshot_date >= week.start_date && d.snapshot_date <= week.end_date),
+}));
+
+const pageTitle = `历史归档 - ${year}年${MONTH_NAMES[monthNum - 1]} | AmazingIndex`;
+const pageDesc = `在 AmazingIndex 探索 ${year}年${MONTH_NAMES[monthNum - 1]} 的 AI 行业动态与突破。`;
+---
+
+<BaseLayout
+  title={pageTitle}
+  description={pageDesc}
+  canonicalUrl={`https://www.amazingindex.com/daily/${month}`}
+  ogTitle={pageTitle}
+  ogDescription={pageDesc}
+  ogUrl={`https://www.amazingindex.com/daily/${month}`}
+  jsonLd={{
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": pageTitle,
+    "description": pageDesc,
+    "url": `https://www.amazingindex.com/daily/${month}`
+  }}
+>
+  <div class="archive-page">
+    <Masthead />
+    <NavBar />
+
+    <div class="layout">
+      <div class="main-col">
+        <div class="breadcrumb">
+          <a href="/" data-astro-reload>首页</a><span class="sep">/</span><a href="/daily">历史归档</a><span class="sep">/</span>{MONTH_NAMES[monthNum - 1]}
+        </div>
+
+        <div class="page-header">
+          <h1>历史归档</h1>
+          <div class="sub">AI 行业动态的完整记录</div>
+        </div>
+
+        <div class="year-tabs">
+          <button class="year-tab active">{year}</button>
+        </div>
+
+        <div class="month-grid">
+          {Array.from({ length: 12 }, (_, i) => {
+            const mn = 12 - i;
+            const md = months.find(m => new Date(m.month).getUTCMonth() + 1 === mn);
+            const isFuture = year === currentYear && mn > currentMonth;
+            const isActive = mn === monthNum;
+
+            if (isFuture) {
+              return (
+                <div class="month-cell future">
+                  <div class="mc-label">{MONTH_NAMES[mn - 1]}</div>
+                  <div class="mc-score">--</div>
+                  <div class="mc-score-sub">平均 Aha 指数</div>
+                  <div class="mc-count">0 篇</div>
+                  <div class="mc-bar"><div></div><div></div><div></div></div>
+                </div>
+              );
+            }
+
+            if (!md) {
+              return (
+                <a href={`/daily/${year}-${String(mn).padStart(2, '0')}`} class={`month-cell ${isActive ? 'current' : ''}`}>
+                  <div class="mc-label">{MONTH_NAMES[mn - 1]}</div>
+                  <div class="mc-score">--</div>
+                  <div class="mc-score-sub">平均 Aha 指数</div>
+                  <div class="mc-count">0 篇</div>
+                  <div class="mc-bar"><div></div><div></div><div></div></div>
+                </a>
+              );
+            }
+
+            return (
+              <a href={`/daily/${year}-${String(mn).padStart(2, '0')}`} class={`month-cell ${isActive ? 'current' : ''}`}>
+                <div class="mc-label">{MONTH_NAMES[mn - 1]}</div>
+                <div class="mc-score">{md.avg_aha_score.toFixed(1)}</div>
+                <div class="mc-score-sub">平均指数</div>
+                <div class="mc-top">{md.top_story_title}</div>
+                <div class="mc-count">{md.item_count} 篇</div>
+                <div class="mc-bar">
+                  <div class="f"></div>
+                  <div class="f"></div>
+                  <div class={md.avg_aha_score > 85 ? 'fh' : ''}></div>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+
+        <hr class="section-divider" />
+
+        <div id={month}>
+          <div class="month-detail-header">
+            <h2>{year}年{MONTH_NAMES[monthNum - 1]}</h2>
+            <span class="cnt">共收录 {monthData?.item_count || 0} 篇</span>
+          </div>
+
+          {monthData?.summary && (
+            <div class="month-summary">
+              <strong>AI 总结：</strong> {monthData.summary}
+            </div>
+          )}
+
+          {weeksWithDays.map(week => (
+              <div class="week-section">
+                <div class="week-header">
+                  <h3>第 {week.week_number} 周</h3>
+                  <span class="week-range">{week.start_date.substring(5).replace('-', '.')} - {week.end_date.substring(5).replace('-', '.')}</span>
+                  <span class="week-stats">平均分: {week.avg_aha_score.toFixed(1)}</span>
+                </div>
+
+                {week.weekDays.map(day => {
+                  const isToday = day.snapshot_date === new Date().toISOString().split('T')[0];
+                  const items = dayItemsMap[day.snapshot_date] || [];
+                  const dateObj = new Date(day.snapshot_date);
+                  const weekday = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][dateObj.getDay()];
+
+                  if (isToday && day.item_count === 0) {
+                    return (
+                      <div class="day-block">
+                        <div class="day-head today-row">
+                          <div class="dh-toggle"></div>
+                          <div class="dh-date">{day.snapshot_date.substring(5).replace('-', '.')}</div>
+                          <div class="dh-weekday">{weekday}</div>
+                          <div class="today-tag">今日</div>
+                          <div class="pending">正在编译今日简报...</div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div class="day-block">
+                      <div class="day-head" data-date={day.snapshot_date}>
+                        <div class="dh-toggle">▶</div>
+                        <div class="dh-date">{day.snapshot_date.substring(5).replace('-', '.')}</div>
+                        <div class="dh-weekday">{weekday}</div>
+                        <div class="dh-score">{day.aha_score.toFixed(1)}</div>
+                        <div class="dh-delta" style="color: var(--green);">{day.aha_delta}</div>
+                        <div class="dh-top">{day.top_story_title}</div>
+                        <div class="dh-count">{day.item_count} 篇</div>
+                        <div class="dh-bar">
+                          <div class="f"></div>
+                          <div class="f"></div>
+                          <div class={day.aha_score > 90 ? 'fh' : ''}></div>
+                        </div>
+                      </div>
+
+                      <div class="day-items" data-items-for={day.snapshot_date}>
+                        {items.map((item, idx) => (
+                          <div class="item-row">
+                            <div class="ir-num">{String(idx + 1).padStart(2, '0')}</div>
+                            <div class="ir-title">{item.processed_title || item.title}</div>
+                            <div class="ir-tags">
+                              {item.tags?.slice(0, 2).map(tag => (
+                                <span class="ir-tag">{tag}</span>
+                              ))}
+                            </div>
+                            <div class="ir-src">{item.source_name}</div>
+                            <a href={item.original_url || item.url} target="_blank" rel="noopener noreferrer" class="ir-link">阅读全文 →</a>
+                          </div>
+                        ))}
+                        <a href={`/daily/${day.snapshot_date}`} class="ir-more">查看当日全部 {day.item_count} 篇简报 →</a>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <div class="back-to-overview">
+                  <a href="/daily" class="lnk">返回概览 ↑</a>
+                </div>
+              </div>
+          ))}
+        </div>
+      </div>
+
+      <div class="side-col">
+        <div class="side-section">
+          <div class="side-title">全局统计</div>
+          <div class="side-stats">
+            <div class="side-stat">
+              <span class="ss-label">总期数</span>
+              <span class="ss-val">{stats.total_editions}</span>
+            </div>
+            <div class="side-stat">
+              <span class="ss-label">收录文章</span>
+              <span class="ss-val">{stats.total_items.toLocaleString()}</span>
+            </div>
+            <div class="side-stat">
+              <span class="ss-label">历史平均分</span>
+              <span class="ss-val">{stats.avg_aha_score.toFixed(1)}</span>
+            </div>
+            <div class="side-stat">
+              <span class="ss-label">最高得分</span>
+              <span class="ss-val" style="color: var(--accent);">{stats.peak_aha_score.toFixed(1)}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="side-section">
+          <div class="side-title">关于归档</div>
+          <div class="about-box">
+            AmazingIndex 历史归档保存了 AI 行业的每日演进。
+            每一期都是最具影响力新闻的快照，由我们的 <strong>Aha Index</strong> 算法进行评分，以在噪音中凸显真正的突破。
+          </div>
+        </div>
+
+        <div class="side-footer">
+          <span>AmazingIndex</span>
+          <span>始于 2024</span>
+        </div>
+      </div>
+    </div>
+    <Footer />
+  </div>
+</BaseLayout>
+
+<script is:inline>
+document.addEventListener('astro:page-load', () => {
+  document.querySelectorAll('.day-head[data-date]').forEach(head => {
+    head.addEventListener('click', () => {
+      const date = head.getAttribute('data-date');
+      const toggle = head.querySelector('.dh-toggle');
+      const items = document.querySelector(`[data-items-for="${date}"]`);
+      if (!toggle || !items) return;
+      const isOpen = items.classList.contains('open');
+      if (isOpen) {
+        items.classList.remove('open');
+        toggle.classList.remove('open');
+      } else {
+        items.classList.add('open');
+        toggle.classList.add('open');
+      }
+    });
+  });
+});
+</script>
