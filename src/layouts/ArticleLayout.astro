@@ -16,7 +16,7 @@ const { item, date, items, stats, days, categories } = Astro.props;
 
 const title = (item.processed_title || item.title || '无标题') + ' | AmazingIndex';
 const desc = (item.summary || '').slice(0, 150);
-const articleUrl = `https://www.amazingindex.com/article/${item.processed_item_id}/`;
+const articleUrl = `https://www.amazingindex.com/article/${item.processed_item_id}`;
 
 let extra: any = {};
 if (typeof item.extra === 'string') {
