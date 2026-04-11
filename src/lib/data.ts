@@ -49,6 +49,27 @@ export async function getItemById(
   return (data?.[0] as ProcessedItem) ?? null;
 }
 
+export async function getItemByPid(
+  pid: string,
+): Promise<ProcessedItem | null> {
+  const { data } = await supabase
+    .from(TABLE)
+    .select('*')
+    .eq('processed_item_id', pid)
+    .limit(1);
+  return (data?.[0] as ProcessedItem) ?? null;
+}
+
+export async function getAllItems(): Promise<ProcessedItem[]> {
+  const dates = await getAllDates();
+  const all: ProcessedItem[] = [];
+  for (const date of dates) {
+    const items = await getItemsByDate(date);
+    all.push(...items);
+  }
+  return all;
+}
+
 function getWeekNumber(d: Date) {
   const dt = new Date(
     Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()),

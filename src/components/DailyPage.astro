@@ -1,0 +1,65 @@
+---
+import Masthead from './Masthead.astro';
+import NavBar from './NavBar.astro';
+import BriefingCard from './BriefingCard.astro';
+import Sidebar from './Sidebar.astro';
+import Footer from './Footer.astro';
+import type { ProcessedItem, DailyArchive, GlobalStats } from '../lib/types';
+
+interface Props {
+  items: ProcessedItem[];
+  stats: GlobalStats;
+  days: DailyArchive[];
+  date?: string;
+  categories: string[];
+  showArchiveBanner?: boolean;
+}
+
+const { items, stats, days, date, categories, showArchiveBanner = true } = Astro.props;
+
+const snapshotDate = date || (items.length > 0 ? items[0].snapshot_date : undefined);
+---
+
+<Masthead items={items} />
+<NavBar categories={categories} />
+
+<div class="layout">
+  <main class="main-col">
+    <div class="section-label">今日精选 · Today's Picks</div>
+    <div class="article-list" id="article-list">
+      {items.length > 0 ? (
+        items.map((item, index) => (
+          <BriefingCard item={item} index={index} date={snapshotDate} />
+        ))
+      ) : (
+        <div class="loading-state">今日暂无更新</div>
+      )}
+    </div>
+  </main>
+  <Sidebar items={items} stats={stats} days={days} />
+</div>
+
+<Footer showArchiveBanner={showArchiveBanner} date={snapshotDate} />
+
+<script is:inline>
+document.addEventListener('astro:page-load', () => {
+  const tabs = document.querySelectorAll('#nav-tabs .nav-tab');
+  const cards = document.querySelectorAll('#article-list > [data-category]');
+  if (!tabs.length || !cards.length) return;
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const cat = tab.getAttribute('data-category');
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      cards.forEach(card => {
+        if (cat === '全部' || card.getAttribute('data-category') === cat) {
+          card.style.display = '';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    });
+  });
+});
+</script>
