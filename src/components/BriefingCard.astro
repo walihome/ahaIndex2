@@ -8,7 +8,7 @@ interface Props {
   showDate?: boolean;
 }
 
-const { item, index, date, showDate } = Astro.props;
+const { item, index, showDate } = Astro.props;
 
 const isFeatured = index === 0 && !showDate;
 const numStr = String(index + 1).padStart(3, '0');
@@ -28,9 +28,7 @@ const description = item.summary || '无摘要';
 const category = item.tags && item.tags.length > 0 ? item.tags[0] : '综合';
 const tags = item.tags ? item.tags.slice(1) : [];
 
-const articleUrl = date
-  ? `/daily/${date}/article/${item.processed_item_id}`
-  : (item.snapshot_date ? `/daily/${item.snapshot_date}/article/${item.processed_item_id}` : '#');
+const articleUrl = item.processed_item_id ? `/article/${item.processed_item_id}` : '#';
 ---
 
 {isFeatured ? (

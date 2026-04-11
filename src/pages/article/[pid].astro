@@ -1,0 +1,27 @@
+---
+import ArticleLayout from '../../layouts/ArticleLayout.astro';
+import { getAllItems, getItemsByDate, getGlobalStats, getDailyArchives } from '../../lib/data';
+
+export async function getStaticPaths() {
+  const allItems = await getAllItems();
+  return allItems
+    .filter(item => item.processed_item_id)
+    .map(item => ({
+      params: { pid: item.processed_item_id },
+      props: { item },
+    }));
+}
+
+const { item } = Astro.props;
+const date = item.snapshot_date;
+
+const items = await getItemsByDate(date);
+const stats = await getGlobalStats();
+
+const now = new Date();
+const days = await getDailyArchives(now.getFullYear(), now.getMonth() + 1);
+
+const categories = ['全部', ...Array.from(new Set(items.map(i => i.category).filter(Boolean) as string[]))];
+---
+
+<ArticleLayout item={item} date={date} items={items} stats={stats} days={days} categories={categories} />

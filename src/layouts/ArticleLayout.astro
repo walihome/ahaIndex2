@@ -1,17 +1,22 @@
 ---
 import BaseLayout from './BaseLayout.astro';
-import type { ProcessedItem } from '../lib/types';
+import DailyPage from '../components/DailyPage.astro';
+import type { ProcessedItem, DailyArchive, GlobalStats } from '../lib/types';
 
 interface Props {
   item: ProcessedItem;
   date: string;
+  items: ProcessedItem[];
+  stats: GlobalStats;
+  days: DailyArchive[];
+  categories: string[];
 }
 
-const { item, date } = Astro.props;
+const { item, date, items, stats, days, categories } = Astro.props;
 
 const title = (item.processed_title || item.title || '无标题') + ' - AmazingIndex';
 const desc = (item.summary || '').slice(0, 150);
-const articleUrl = `https://www.amazingindex.com/daily/${date}/article/${item.processed_item_id}`;
+const articleUrl = `https://www.amazingindex.com/article/${item.processed_item_id}`;
 
 let extra: any = {};
 if (typeof item.extra === 'string') {
@@ -54,6 +59,10 @@ function formatNumber(num: number) {
     "publisher": { "@type": "Organization", "name": "AmazingIndex" }
   }}
 >
+  <div class="article-page-bg" aria-hidden="true">
+    <DailyPage items={items} stats={stats} days={days} date={date} categories={categories} showArchiveBanner={true} />
+  </div>
+
   <div class="backdrop" data-back-url={backUrl}>
     <div class="modal" transition:animate="slide">
       <div class="drag-handle"></div>
@@ -166,7 +175,7 @@ function formatNumber(num: number) {
 
       function goBack() {
         const backUrl = backdrop.getAttribute('data-back-url');
-        if (document.referrer && document.referrer.includes('/daily/')) {
+        if (document.referrer && (document.referrer.includes('/daily/') || document.referrer.includes('amazingindex.com'))) {
           history.back();
         } else if (backUrl) {
           window.location.href = backUrl;
