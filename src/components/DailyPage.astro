@@ -13,9 +13,10 @@ interface Props {
   date?: string;
   categories: string[];
   showArchiveBanner?: boolean;
+  heading?: string;
 }
 
-const { items, stats, days, date, categories, showArchiveBanner = true } = Astro.props;
+const { items, stats, days, date, categories, showArchiveBanner = true, heading } = Astro.props;
 
 const snapshotDate = date || (items.length > 0 ? items[0].snapshot_date : undefined);
 ---
@@ -25,6 +26,7 @@ const snapshotDate = date || (items.length > 0 ? items[0].snapshot_date : undefi
 
 <div class="layout">
   <main class="main-col">
+    {heading && <h1 class="sr-only">{heading}</h1>}
     <div class="section-label">今日精选 · Today's Picks</div>
     <div class="article-list" id="article-list">
       {items.length > 0 ? (

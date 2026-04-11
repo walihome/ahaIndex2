@@ -7,36 +7,41 @@ interface Props {
   title?: string;
   description?: string;
   canonicalUrl?: string;
+  ogType?: string;
   ogTitle?: string;
   ogDescription?: string;
   ogUrl?: string;
   ogImage?: string;
   jsonLd?: Record<string, any>;
+  noindex?: boolean;
 }
 
 const {
-  title = 'AmazingIndex · 每日 AI 行业精选简报',
+  title = 'AmazingIndex - 每日 AI 行业精选简报',
   description = 'AmazingIndex 基于多维度量化算法，每日从数十个来源精选最值得关注的 AI 行业动态，过滤噪音，直达洞察。',
   canonicalUrl = 'https://www.amazingindex.com/',
-  ogTitle = 'AmazingIndex - 信息塑造认知',
-  ogDescription = '信息塑造认知， 基于多维度量化算法，每日精选最值得关注的 AI 行业动态。',
+  ogType = 'website',
+  ogTitle = 'AmazingIndex - 每日 AI 行业精选简报',
+  ogDescription = '基于多维度量化算法，每日精选最值得关注的 AI 行业动态，过滤噪音，直达洞察。',
   ogUrl = 'https://www.amazingindex.com/',
   ogImage = 'https://www.amazingindex.com/og/amazingindex-og.jpg',
   jsonLd,
+  noindex = false,
 } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
     <meta name="description" content={description} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
     <meta name="keywords" content="AI简报, 人工智能, AI行业动态, AI日报, AmazingIndex" />
     <link rel="canonical" href={canonicalUrl} />
 
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={ogType} />
     <meta property="og:title" content={ogTitle} />
     <meta property="og:description" content={ogDescription} />
     <meta property="og:url" content={ogUrl} />

@@ -14,9 +14,9 @@ interface Props {
 
 const { item, date, items, stats, days, categories } = Astro.props;
 
-const title = (item.processed_title || item.title || '无标题') + ' - AmazingIndex';
+const title = (item.processed_title || item.title || '无标题') + ' | AmazingIndex';
 const desc = (item.summary || '').slice(0, 150);
-const articleUrl = `https://www.amazingindex.com/article/${item.processed_item_id}`;
+const articleUrl = `https://www.amazingindex.com/article/${item.processed_item_id}/`;
 
 let extra: any = {};
 if (typeof item.extra === 'string') {
@@ -46,6 +46,7 @@ function formatNumber(num: number) {
   title={title}
   description={desc}
   canonicalUrl={articleUrl}
+  ogType="article"
   ogTitle={item.processed_title || item.title || '无标题'}
   ogDescription={desc}
   ogUrl={articleUrl}
@@ -75,7 +76,7 @@ function formatNumber(num: number) {
           <button class="close-btn" aria-label="Close">×</button>
         </div>
 
-        <h2 class="modal-title">{item.processed_title || item.title || '无标题'}</h2>
+        <h1 class="modal-title">{item.processed_title || item.title || '无标题'}</h1>
 
         <div class="modal-meta">
           {item.source_name && <span class="meta-text">{item.source_name.toUpperCase()}</span>}

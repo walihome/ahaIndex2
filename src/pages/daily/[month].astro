@@ -47,16 +47,16 @@ const pageDesc = `在 AmazingIndex 探索 ${year}年${MONTH_NAMES[monthNum - 1]}
 <BaseLayout
   title={pageTitle}
   description={pageDesc}
-  canonicalUrl={`https://www.amazingindex.com/daily/${month}`}
+  canonicalUrl={`https://www.amazingindex.com/daily/${month}/`}
   ogTitle={pageTitle}
   ogDescription={pageDesc}
-  ogUrl={`https://www.amazingindex.com/daily/${month}`}
+  ogUrl={`https://www.amazingindex.com/daily/${month}/`}
   jsonLd={{
     "@context": "https://schema.org",
     "@type": "CollectionPage",
     "name": pageTitle,
     "description": pageDesc,
-    "url": `https://www.amazingindex.com/daily/${month}`
+    "url": `https://www.amazingindex.com/daily/${month}/`
   }}
 >
   <div class="archive-page">
