@@ -2,7 +2,11 @@ name: Build & Deploy
 
 on:
   repository_dispatch:
-    types: [build-deploy]
+    # build-deploy: manual / legacy dispatch
+    # external-workflow-complete: other repos call POST .../dispatches after their workflow finishes
+    types:
+      - build-deploy
+      - external-workflow-complete
   workflow_dispatch:
 
 jobs:
