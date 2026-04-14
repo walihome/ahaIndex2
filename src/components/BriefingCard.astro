@@ -1,5 +1,6 @@
 ---
 import type { ProcessedItem } from '../lib/types';
+import { articlePagePath } from '../lib/articleSlug';
 
 interface Props {
   item: ProcessedItem;
@@ -28,7 +29,7 @@ const description = item.summary || '无摘要';
 const category = item.tags && item.tags.length > 0 ? item.tags[0] : '综合';
 const tags = item.tags ? item.tags.slice(1) : [];
 
-const articleUrl = item.processed_item_id ? `/article/${item.processed_item_id}` : '#';
+const articleUrl = item.processed_item_id ? articlePagePath(item) : '#';
 ---
 
 {isFeatured ? (

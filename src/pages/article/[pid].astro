@@ -2,23 +2,68 @@
 import ArticleLayout from '../../layouts/ArticleLayout.astro';
 import type { ProcessedItem } from '../../lib/types';
 import { getAllItems, getItemsByDate, getGlobalStats, getDailyArchives } from '../../lib/data';
+import { getStableArticleKey, getArticlePathSegment } from '../../lib/articleSlug';
 
 export async function getStaticPaths() {
   const allItems = await getAllItems();
-  const seen = new Map<string, ProcessedItem>();
+
+  type Key = string;
+  const byStableKey = new Map<Key, ProcessedItem[]>();
   for (const item of allItems) {
-    if (!item.processed_item_id) continue;
-    if (!seen.has(item.processed_item_id)) {
-      seen.set(item.processed_item_id, item);
-    }
+    const k = getStableArticleKey(item);
+    if (!k) continue;
+    if (!byStableKey.has(k)) byStableKey.set(k, []);
+    byStableKey.get(k)!.push(item);
   }
-  return Array.from(seen.values()).map(item => ({
-    params: { pid: item.processed_item_id },
-    props: { item },
-  }));
+
+  const preferredByStableKey = new Map<Key, ProcessedItem>();
+  for (const [k, arr] of byStableKey) {
+    arr.sort((a, b) => b.snapshot_date.localeCompare(a.snapshot_date));
+    preferredByStableKey.set(k, arr[0]);
+  }
+
+  const paths: { params: { pid: string }; props: { item: ProcessedItem } }[] = [];
+
+  for (const item of preferredByStableKey.values()) {
+    const seg = getArticlePathSegment(item);
+    paths.push({ params: { pid: seg }, props: { item } });
+  }
+
+  const noKeyByPid = new Map<string, ProcessedItem[]>();
+  for (const item of allItems) {
+    if (getStableArticleKey(item)) continue;
+    if (!item.processed_item_id) continue;
+    if (!noKeyByPid.has(item.processed_item_id)) noKeyByPid.set(item.processed_item_id, []);
+    noKeyByPid.get(item.processed_item_id)!.push(item);
+  }
+  for (const arr of noKeyByPid.values()) {
+    arr.sort((a, b) => b.snapshot_date.localeCompare(a.snapshot_date));
+    paths.push({ params: { pid: arr[0].processed_item_id }, props: { item: arr[0] } });
+  }
+
+  const legacyPidSeen = new Set<string>();
+  for (const item of allItems) {
+    const stable = getStableArticleKey(item);
+    if (!stable) continue;
+    const seg = getArticlePathSegment(item);
+    const pid = item.processed_item_id;
+    if (!pid || pid === seg) continue;
+    if (legacyPidSeen.has(pid)) continue;
+    legacyPidSeen.add(pid);
+    const preferred = preferredByStableKey.get(stable);
+    if (!preferred) continue;
+    paths.push({ params: { pid }, props: { item: preferred } });
+  }
+
+  return paths;
 }
 
 const { item } = Astro.props;
+const canonicalPid = getArticlePathSegment(item);
+if (Astro.params.pid !== canonicalPid) {
+  return Astro.redirect(`/article/${canonicalPid}`, 301);
+}
+
 const date = item.snapshot_date;
 
 const items = await getItemsByDate(date);
