@@ -8,6 +8,27 @@ import type {
 } from './types';
 
 const TABLE = 'display_items';
+const PAGE_SIZE = 1000;
+
+/**
+ * Supabase JS defaults to 1000 rows per query. This helper paginates
+ * through all rows so we never silently drop older content from builds.
+ */
+async function fetchAll<T = any>(
+  buildQuery: (from: number, to: number) => PromiseLike<{ data: any[] | null; error: any }>,
+): Promise<T[]> {
+  const results: T[] = [];
+  let offset = 0;
+  while (true) {
+    const { data, error } = await buildQuery(offset, offset + PAGE_SIZE - 1);
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+    results.push(...(data as T[]));
+    if (data.length < PAGE_SIZE) break;
+    offset += PAGE_SIZE;
+  }
+  return results;
+}
 
 // ─── Build-time memo cache ──────────────────────────
 const _cache = new Map<string, any>();
@@ -43,21 +64,26 @@ export const getLatestDate = memo<string | null>('latestDate', async () => {
 });
 
 export const getAllDates = memo<string[]>('allDates', async () => {
-  const { data } = await supabase
-    .from(TABLE)
-    .select('snapshot_date')
-    .order('snapshot_date', { ascending: false });
-  if (!data) return [];
+  const data = await fetchAll<{ snapshot_date: string }>(
+    (from, to) => supabase
+      .from(TABLE)
+      .select('snapshot_date')
+      .order('snapshot_date', { ascending: false })
+      .range(from, to),
+  );
   return [...new Set(data.map((r) => r.snapshot_date))];
 });
 
 export const getItemsByDate = memoBy<ProcessedItem[]>('itemsByDate', async (date: string) => {
-  const { data } = await supabase
-    .from(TABLE)
-    .select('*')
-    .eq('snapshot_date', date)
-    .order('rank', { ascending: true });
-  return (data as ProcessedItem[]) ?? [];
+  const data = await fetchAll<ProcessedItem>(
+    (from, to) => supabase
+      .from(TABLE)
+      .select('*')
+      .eq('snapshot_date', date)
+      .order('rank', { ascending: true })
+      .range(from, to),
+  );
+  return data;
 });
 
 export async function getItemById(
@@ -71,21 +97,24 @@ export async function getItemById(
 export async function getItemByPid(
   pid: string,
 ): Promise<ProcessedItem | null> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from(TABLE)
     .select('*')
     .eq('processed_item_id', pid)
     .limit(1);
+  if (error) throw error;
   return (data?.[0] as ProcessedItem) ?? null;
 }
 
 export const getAllItems = memo<ProcessedItem[]>('allItems', async () => {
-  const { data } = await supabase
-    .from(TABLE)
-    .select('*')
-    .order('snapshot_date', { ascending: false })
-    .order('rank', { ascending: true });
-  return (data as ProcessedItem[]) ?? [];
+  return fetchAll<ProcessedItem>(
+    (from, to) => supabase
+      .from(TABLE)
+      .select('*')
+      .order('snapshot_date', { ascending: false })
+      .order('rank', { ascending: true })
+      .range(from, to),
+  );
 });
 
 function getWeekNumber(d: Date) {

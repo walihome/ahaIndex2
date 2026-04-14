@@ -44,6 +44,7 @@ jobs:
           CREDS="--endpoint $OSS_ENDPOINT --access-key-id $OSS_ACCESS_KEY_ID --access-key-secret $OSS_ACCESS_KEY_SECRET --region $OSS_REGION"
 
           # Static assets (JS/CSS with hashes) - long-term cache
+          # sync without --delete preserves previously deployed hashed assets on OSS
           ossutil sync ./dist/_astro/ oss://amazingindex/_astro/ \
             --force \
             --metadata "Cache-Control=max-age=31536000,immutable" \
