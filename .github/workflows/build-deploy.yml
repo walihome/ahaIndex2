@@ -4,9 +4,11 @@ on:
   repository_dispatch:
     # build-deploy: manual / legacy dispatch
     # external-workflow-complete: other repos call POST .../dispatches after their workflow finishes
+    # pipeline-done: ahaIndexSync sends this after its pipeline completes
     types:
       - build-deploy
       - external-workflow-complete
+      - pipeline-done
   workflow_dispatch:
 
 jobs:
