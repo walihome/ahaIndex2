@@ -26,6 +26,7 @@ function getUserId() {
 }
 
 const trackedImpressions = new Set<string>();
+let globalListenersAttached = false;
 
 function trackEvent(
   itemId: string,
@@ -60,7 +61,7 @@ function initImpressionTracking() {
             trackEvent(itemId, snapshotDate, 'impression');
           }
           observer.unobserve(el);
-        }, 1000);
+        }, 5000);
       });
     },
     { threshold: 0.5 },
@@ -69,19 +70,32 @@ function initImpressionTracking() {
   cards.forEach((card) => observer.observe(card));
 }
 
-function initClickTracking() {
-  document.querySelectorAll<HTMLElement>('[data-event="click_original"]').forEach((el) => {
-    el.addEventListener('click', () => {
-      const itemId = el.dataset.itemId;
-      const snapshotDate = el.dataset.snapshotDate;
-      if (itemId && snapshotDate) {
-        trackEvent(itemId, snapshotDate, 'click_original');
-      }
-    });
+function initClickOriginalTracking() {
+  document.addEventListener('click', (e) => {
+    const el = (e.target as HTMLElement).closest<HTMLElement>('[data-event="click_original"]');
+    if (!el) return;
+    const itemId = el.dataset.itemId;
+    const snapshotDate = el.dataset.snapshotDate;
+    if (itemId && snapshotDate) {
+      trackEvent(itemId, snapshotDate, 'click_original');
+    }
   });
+}
+
+function initClickTracking() {
+  document.addEventListener('aha:modal-opened', ((e: CustomEvent) => {
+    const { item_id, snapshot_date } = e.detail;
+    if (item_id && snapshot_date) {
+      trackEvent(item_id, snapshot_date, 'click');
+    }
+  }) as EventListener);
 }
 
 document.addEventListener('astro:page-load', () => {
   initImpressionTracking();
-  initClickTracking();
+  if (!globalListenersAttached) {
+    globalListenersAttached = true;
+    initClickOriginalTracking();
+    initClickTracking();
+  }
 });

@@ -76,6 +76,9 @@ function initModal() {
     e.stopImmediatePropagation();
     const articleUrl = link.getAttribute('href')!;
 
+    const itemId = link.dataset.itemId;
+    const snapshotDate = link.dataset.snapshotDate;
+
     try {
       const resp = await fetch(articleUrl);
       if (!resp.ok) {
@@ -84,6 +87,12 @@ function initModal() {
       }
       const html = await resp.text();
       openModal(html, articleUrl);
+
+      if (itemId && snapshotDate) {
+        document.dispatchEvent(new CustomEvent('aha:modal-opened', {
+          detail: { item_id: itemId, snapshot_date: snapshotDate },
+        }));
+      }
     } catch {
       window.location.href = articleUrl;
     }
