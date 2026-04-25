@@ -34,8 +34,11 @@ function trackEvent(
 ) {
   const userId = getUserId();
   if (!userId || !itemId || !snapshotDate) return;
-  // Future: send to Supabase user_events table
-  console.log(`Tracking: ${eventType}`, { item_id: itemId, user_id: userId });
+  fetch('/api/track-event', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ item_id: itemId, snapshot_date: snapshotDate, event_type: eventType, user_id: userId }),
+  }).catch(() => {});
 }
 
 function initImpressionTracking() {
