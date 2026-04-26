@@ -1,3 +1,5 @@
+import { supabase } from '../lib/supabase';
+
 const UID_KEY = 'aha_briefing_uid';
 
 function setCookie(name: string, value: string, days: number) {
@@ -26,7 +28,6 @@ function getUserId() {
 }
 
 const trackedImpressions = new Set<string>();
-let globalListenersAttached = false;
 
 function trackEvent(
   itemId: string,
@@ -35,11 +36,12 @@ function trackEvent(
 ) {
   const userId = getUserId();
   if (!userId || !itemId || !snapshotDate) return;
-  fetch('/api/track-event', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ item_id: itemId, snapshot_date: snapshotDate, event_type: eventType, user_id: userId }),
-  }).catch(() => {});
+  supabase.from('user_events').insert({
+    item_id: itemId,
+    snapshot_date: snapshotDate,
+    event_type: eventType,
+    user_id: userId,
+  }).then(() => {});
 }
 
 function initImpressionTracking() {
@@ -90,6 +92,8 @@ function initClickTracking() {
     }
   }) as EventListener);
 }
+
+let globalListenersAttached = false;
 
 document.addEventListener('astro:page-load', () => {
   initImpressionTracking();
