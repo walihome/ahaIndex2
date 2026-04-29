@@ -1,4 +1,5 @@
-import { supabase } from '../lib/supabase';
+const SUPABASE_URL = 'https://wyhpcfjtmtitorinkevj.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5aHBjZmp0bXRpdG9yaW5rZXZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2ODQ5MzAsImV4cCI6MjA4ODI2MDkzMH0.wjhLn9RUriD5GWRm7yho-Ke6RpsvhJWseKaQUsIrJOw';
 
 const UID_KEY = 'aha_briefing_uid';
 
@@ -37,12 +38,16 @@ function trackEvent(
 ) {
   const userId = getUserId();
   if (!userId || !itemId || !snapshotDate) return;
-  supabase.from('user_events').insert({
-    item_id: itemId,
-    snapshot_date: snapshotDate,
-    event_type: eventType,
-    user_id: userId,
-  }).then(() => {});
+  fetch(`${SUPABASE_URL}/rest/v1/user_events`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'Prefer': 'return=minimal',
+    },
+    body: JSON.stringify({ item_id: itemId, snapshot_date: snapshotDate, event_type: eventType, user_id: userId }),
+  }).catch(() => {});
 }
 
 function initImpressionTracking() {
