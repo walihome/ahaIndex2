@@ -4,11 +4,14 @@ function initModal() {
   let previousTitle = '';
 
   function lockScroll() {
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
     document.body.style.overflow = 'hidden';
+    document.body.style.paddingRight = `${scrollbarWidth}px`;
   }
 
   function unlockScroll() {
     document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
   }
 
   function closeModal() {
