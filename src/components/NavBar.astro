@@ -2,14 +2,15 @@
 interface Props {
   categories?: string[];
   selectedCategory?: string;
+  date?: string;
 }
 
-const { categories = [], selectedCategory = '全部' } = Astro.props;
+const { categories = [], selectedCategory = '全部', date } = Astro.props;
 
-const now = new Date();
-const year = now.getFullYear();
-const month = String(now.getMonth() + 1).padStart(2, '0');
-const weekDay = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][now.getDay()];
+const displayDate = date ? new Date(date + 'T00:00:00') : new Date();
+const year = displayDate.getFullYear();
+const month = String(displayDate.getMonth() + 1).padStart(2, '0');
+const weekDay = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][displayDate.getDay()];
 ---
 
 <nav class="nav-bar">
