@@ -1,11 +1,12 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import DailyPage from '../components/DailyPage.astro';
-import { getLatestDate, getItemsByDate, getGlobalStats, getDailyArchives } from '../lib/data';
+import { getLatestDate, getItemsByDate, getGlobalStats, getDailyArchives, getLatestDailyArchive } from '../lib/data';
 
 const latestDate = await getLatestDate();
 const items = latestDate ? await getItemsByDate(latestDate) : [];
 const stats = await getGlobalStats();
+const dailyArchive = await getLatestDailyArchive();
 
 const now = new Date();
 const curMonthDays = await getDailyArchives(now.getFullYear(), now.getMonth() + 1);
@@ -22,5 +23,5 @@ const categories = ['全部', ...Array.from(new Set(items.map(item => item.categ
 ---
 
 <BaseLayout>
-  <DailyPage items={items} stats={stats} days={days} categories={categories} heading="每日 AI 行业精选简报" />
+  <DailyPage items={items} stats={stats} days={days} dailyArchive={dailyArchive} categories={categories} heading="每日 AI 行业精选简报" />
 </BaseLayout>
