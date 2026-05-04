@@ -67,6 +67,9 @@ export interface DailyArchive {
   rarity_score: number;
   timeliness_score: number;
   impact_score: number;
+  percentile_90d?: number | null;
+  percentile_tier?: string | null;
+  sample_size_90d?: number | null;
 }
 
 export interface GlobalStats {

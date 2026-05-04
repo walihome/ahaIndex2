@@ -244,6 +244,24 @@ export async function getWeeklyArchives(
   return result.sort((a, b) => b.week_number - a.week_number);
 }
 
+export const getLatestDailyArchive = memo<DailyArchive | null>('latestDailyArchive', async () => {
+  const { data } = await supabase
+    .from('daily_archives')
+    .select('snapshot_date, aha_score, aha_delta, item_count, top_story_title, top_story_source, top_tags, rarity_score, timeliness_score, impact_score, percentile_90d, percentile_tier, sample_size_90d')
+    .order('snapshot_date', { ascending: false })
+    .limit(1);
+  return (data?.[0] as DailyArchive) ?? null;
+});
+
+export async function getDailyArchiveByDate(date: string): Promise<DailyArchive | null> {
+  const { data } = await supabase
+    .from('daily_archives')
+    .select('snapshot_date, aha_score, aha_delta, item_count, top_story_title, top_story_source, top_tags, rarity_score, timeliness_score, impact_score, percentile_90d, percentile_tier, sample_size_90d')
+    .eq('snapshot_date', date)
+    .limit(1);
+  return (data?.[0] as DailyArchive) ?? null;
+}
+
 export async function getDailyArchives(
   year: number,
   month: number,

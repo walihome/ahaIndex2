@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import DailyPage from '../../../components/DailyPage.astro';
-import { getAllDates, getItemsByDate, getGlobalStats, getDailyArchives } from '../../../lib/data';
+import { getAllDates, getItemsByDate, getGlobalStats, getDailyArchives, getDailyArchiveByDate } from '../../../lib/data';
 
 export async function getStaticPaths() {
   const dates = await getAllDates();
@@ -11,6 +11,7 @@ export async function getStaticPaths() {
 const { date } = Astro.params;
 const items = await getItemsByDate(date!);
 const stats = await getGlobalStats();
+const dailyArchive = await getDailyArchiveByDate(date!);
 
 const dateObj = new Date(date! + 'T00:00:00');
 const curMonthDays = await getDailyArchives(dateObj.getFullYear(), dateObj.getMonth() + 1);
@@ -44,5 +45,5 @@ const pageDesc = `AmazingIndex ${date} 每日 AI 行业精选简报。基于多�
     "url": `https://www.amazingindex.com/daily/${date}`
   }}
 >
-  <DailyPage items={items} stats={stats} days={days} date={date} categories={categories} heading={`${date} AI 行业精选简报`} />
+  <DailyPage items={items} stats={stats} days={days} dailyArchive={dailyArchive} date={date} categories={categories} heading={`${date} AI 行业精选简报`} />
 </BaseLayout>

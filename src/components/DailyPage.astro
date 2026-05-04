@@ -10,13 +10,14 @@ interface Props {
   items: ProcessedItem[];
   stats: GlobalStats;
   days: DailyArchive[];
+  dailyArchive?: DailyArchive | null;
   date?: string;
   categories: string[];
   showArchiveBanner?: boolean;
   heading?: string;
 }
 
-const { items, stats, days, date, categories, showArchiveBanner = true, heading } = Astro.props;
+const { items, stats, days, dailyArchive = null, date, categories, showArchiveBanner = true, heading } = Astro.props;
 
 const snapshotDate = date || (items.length > 0 ? items[0].snapshot_date : undefined);
 ---
@@ -38,7 +39,7 @@ const snapshotDate = date || (items.length > 0 ? items[0].snapshot_date : undefi
       )}
     </div>
   </main>
-  <Sidebar items={items} stats={stats} days={days} />
+  <Sidebar items={items} stats={stats} days={days} dailyArchive={dailyArchive} />
 </div>
 
 <Footer showArchiveBanner={showArchiveBanner} date={snapshotDate} />

@@ -415,6 +415,22 @@ body::before {
   margin-top: 8px;
 }
 
+.percentile-line {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  margin-top: 10px;
+  font-family: 'Noto Serif SC', serif;
+}
+
+.percentile-p90 {
+  color: #c43e27;
+  font-weight: 700;
+}
+
+.percentile-p70 {
+  color: var(--muted);
+}
+
 .score-chart {
   height: 60px;
   margin: 24px 0;
@@ -1084,107 +1100,14 @@ body::before {
   }
   .aha-score-mobile {
     display: block;
-    position: relative;
   }
   .score-trigger {
     font-family: 'Helvetica Neue', Arial, sans-serif;
     font-size: 16px;
     font-weight: 400;
     color: #1a1a1a;
-    border-bottom: 1px dashed rgba(0,0,0,0.3);
-    cursor: pointer;
   }
-  .score-tooltip {
-    position: absolute;
-    top: calc(100% + 10px);
-    right: 0;
-    width: 220px;
-    background: #1a1a1a;
-    border-radius: 8px;
-    padding: 14px;
-    z-index: 100;
-    display: none;
-    text-align: left;
-    text-transform: none;
-    letter-spacing: normal;
-  }
-  .score-tooltip.show {
-    display: block;
-  }
-  .score-tooltip::before {
-    content: '';
-    position: absolute;
-    top: -5px;
-    right: 10px;
-    width: 10px;
-    height: 10px;
-    background: #1a1a1a;
-    transform: rotate(45deg);
-    border-radius: 1px;
-  }
-  .tooltip-label {
-    font-size: 9px;
-    text-transform: uppercase;
-    color: #888;
-    margin-bottom: 4px;
-  }
-  .tooltip-score {
-    font-size: 34px;
-    font-weight: bold;
-    color: #f5f0e8;
-    line-height: 1;
-    margin-bottom: 4px;
-  }
-  .tooltip-trend {
-    font-size: 10px;
-    color: #c0392b;
-    margin-bottom: 12px;
-  }
-  .tooltip-divider {
-    height: 1px;
-    background: rgba(255,255,255,0.1);
-    margin: 12px 0;
-  }
-  .tooltip-dim {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 10px;
-    color: #f5f0e8;
-    margin-bottom: 8px;
-  }
-  .tooltip-dim span:first-child {
-    width: 36px;
-  }
-  .tooltip-dim span:last-child {
-    width: 45px;
-    text-align: right;
-    color: #888;
-  }
-  .dim-bar-container {
-    flex: 1;
-    height: 2px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 1px;
-  }
-  .dim-bar-fill {
-    height: 100%;
-    background: #c0392b;
-    border-radius: 1px;
-  }
-  .tooltip-desc {
-    font-size: 10px;
-    color: #888;
-    line-height: 1.5;
-    margin-bottom: 12px;
-  }
-  .tooltip-link {
-    font-size: 10px;
-    color: #f5f0e8;
-    text-decoration: none;
-    display: block;
-  }
-  
+
   /* Navbar */
   .nav-inner {
     padding: 0 14px;

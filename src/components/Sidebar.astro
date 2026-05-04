@@ -5,9 +5,10 @@ interface Props {
   items?: ProcessedItem[];
   stats?: GlobalStats | null;
   days?: DailyArchive[];
+  dailyArchive?: DailyArchive | null;
 }
 
-const { items = [], stats = null, days = [] } = Astro.props;
+const { items = [], stats = null, days = [], dailyArchive = null } = Astro.props;
 
 const ahaScore = items.length > 0
   ? (items.reduce((sum, item) => sum + (item.aha_index || 0), 0) / items.length * 100).toFixed(1)
@@ -54,10 +55,16 @@ function dateStr(d: number) {
 
 <aside class="side-col">
   <div class="aha-score-card">
-    <div class="score-header">Daily AHA Index</div>
+    <div class="score-header">值得看指数 / WORTH READING</div>
     <div class="score-display">
       <span class="score-number">{ahaScore}</span>
-      <div class="score-unit">Absolute Threshold Score</div>
+      <div class="score-unit">综合评分 · 满分 100</div>
+      {dailyArchive?.percentile_tier === 'p90_plus' && (
+        <div class="percentile-line percentile-p90">今日罕见高分 · 近 90 天前 10%</div>
+      )}
+      {dailyArchive?.percentile_tier === 'p70_p90' && (
+        <div class="percentile-line percentile-p70">高于近期均值</div>
+      )}
     </div>
     <div class="score-chart">
       {recentDays.map((d, i) => {
