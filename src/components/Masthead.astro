@@ -1,5 +1,6 @@
 ---
 import type { ProcessedItem } from '../lib/types';
+import { getItemsByDate } from '../lib/data';
 
 interface Props {
   items?: ProcessedItem[];
@@ -18,6 +19,23 @@ const day = String(displayDate.getDate()).padStart(2, '0');
 const ahaScore = items.length > 0
   ? (items.reduce((sum, item) => sum + (item.aha_index || 0), 0) / items.length * 100).toFixed(1)
   : '0.0';
+
+// Compute real trend vs previous day
+let trendText = '';
+const currentDateStr = items.length > 0 && items[0].snapshot_date;
+if (currentDateStr) {
+  const prevDate = new Date(currentDateStr + 'T00:00:00');
+  prevDate.setDate(prevDate.getDate() - 1);
+  const prevDateStr = prevDate.toISOString().split('T')[0];
+  const prevItems = await getItemsByDate(prevDateStr);
+  if (prevItems.length > 0 && items.length > 0) {
+    const prevScore = prevItems.reduce((s, i) => s + (i.aha_index || 0), 0) / prevItems.length * 100;
+    const curScore = items.reduce((s, i) => s + (i.aha_index || 0), 0) / items.length * 100;
+    const delta = curScore - prevScore;
+    const sign = delta >= 0 ? '▲' : '▼';
+    trendText = `${sign} ${Math.abs(delta).toFixed(1)} 较昨日`;
+  }
+}
 
 let scarcity = 0, timeliness = 0, impact = 0;
 if (items.length > 0) {
@@ -63,7 +81,7 @@ if (items.length > 0) {
         <div class="score-tooltip">
           <div class="tooltip-label">今日 AmazingIndex</div>
           <div class="tooltip-score">{ahaScore}</div>
-          <div class="tooltip-trend">▲ 2.3% 较昨日</div>
+          {trendText && <div class="tooltip-trend">{trendText}</div>}
           <div class="tooltip-divider"></div>
           <div class="tooltip-dim">
             <span>稀缺性</span>
@@ -88,7 +106,7 @@ if (items.length > 0) {
         </div>
       </div>
       <div class="masthead-vol">
-        VOL. {displayDate.getMonth() + 1}<br/>
+        VOL. {year}.{month}<br/>
         {year}.{month}.{day}
       </div>
     </div>

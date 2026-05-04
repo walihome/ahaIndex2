@@ -13,6 +13,10 @@ const ahaScore = items.length > 0
   ? (items.reduce((sum, item) => sum + (item.aha_index || 0), 0) / items.length * 100).toFixed(1)
   : '0.0';
 
+// Build 7-day bar chart from real days data (sorted desc, take first 7, reverse to chronological)
+const recentDays = days.slice(0, 7).reverse();
+const maxScore = Math.max(...recentDays.map(d => d.aha_score), 1);
+
 const now = new Date();
 const year = now.getFullYear();
 const month = now.getMonth();
@@ -56,13 +60,12 @@ function dateStr(d: number) {
       <div class="score-unit">Absolute Threshold Score</div>
     </div>
     <div class="score-chart">
-      <div class="bar" style="height: 45%" title="Mon"></div>
-      <div class="bar" style="height: 60%" title="Tue"></div>
-      <div class="bar" style="height: 38%" title="Wed"></div>
-      <div class="bar" style="height: 72%" title="Thu"></div>
-      <div class="bar" style="height: 55%" title="Fri"></div>
-      <div class="bar" style="height: 68%" title="Sat"></div>
-      <div class="bar today" style="height: 82%" title="Today"></div>
+      {recentDays.map((d, i) => {
+        const pct = Math.round((d.aha_score / maxScore) * 100);
+        const isLast = i === recentDays.length - 1;
+        const weekday = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(d.snapshot_date + 'T00:00:00').getDay()];
+        return <div class={`bar${isLast ? ' today' : ''}`} style={`height: ${pct}%`} title={`${weekday} ${d.aha_score.toFixed(0)}`}></div>;
+      })}
     </div>
     <div class="divider"></div>
     <div class="sidebar-archive">

@@ -9,6 +9,21 @@ const stats = await getGlobalStats();
 const currentYear = new Date().getFullYear();
 const months = await getMonthlyArchives(currentYear);
 
+// Compute score distribution from monthly averages
+const buckets = { high: 0, mid: 0, low: 0, veryLow: 0 };
+for (const m of months) {
+  const s = m.avg_aha_score;
+  if (s >= 90) buckets.high++;
+  else if (s >= 80) buckets.mid++;
+  else if (s >= 70) buckets.low++;
+  else buckets.veryLow++;
+}
+const totalMonths = months.length || 1;
+const pctHigh = Math.round((buckets.high / totalMonths) * 100);
+const pctMid = Math.round((buckets.mid / totalMonths) * 100);
+const pctLow = Math.round((buckets.low / totalMonths) * 100);
+const pctVeryLow = Math.round((buckets.veryLow / totalMonths) * 100);
+
 const MONTH_NAMES = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
 const currentMonth = new Date().getMonth() + 1;
 
@@ -125,23 +140,23 @@ const pageDesc = '深入探索 AmazingIndex 过去 AI 行业动态的综合数�
           <div class="side-title">分数分布</div>
           <div class="sb-row">
             <div class="sb-label">90-100</div>
-            <div class="sb-track"><div class="sb-fill high" style="width: 15%;"></div></div>
-            <div class="sb-count">15%</div>
+            <div class="sb-track"><div class="sb-fill high" style={`width: ${pctHigh}%;`}></div></div>
+            <div class="sb-count">{pctHigh}%</div>
           </div>
           <div class="sb-row">
             <div class="sb-label">80-89</div>
-            <div class="sb-track"><div class="sb-fill mid" style="width: 45%;"></div></div>
-            <div class="sb-count">45%</div>
+            <div class="sb-track"><div class="sb-fill mid" style={`width: ${pctMid}%;`}></div></div>
+            <div class="sb-count">{pctMid}%</div>
           </div>
           <div class="sb-row">
             <div class="sb-label">70-79</div>
-            <div class="sb-track"><div class="sb-fill low" style="width: 30%;"></div></div>
-            <div class="sb-count">30%</div>
+            <div class="sb-track"><div class="sb-fill low" style={`width: ${pctLow}%;`}></div></div>
+            <div class="sb-count">{pctLow}%</div>
           </div>
           <div class="sb-row">
             <div class="sb-label">&lt; 70</div>
-            <div class="sb-track"><div class="sb-fill low" style="width: 10%; opacity: 0.3;"></div></div>
-            <div class="sb-count">10%</div>
+            <div class="sb-track"><div class="sb-fill low" style={`width: ${pctVeryLow}%; opacity: 0.3;`}></div></div>
+            <div class="sb-count">{pctVeryLow}%</div>
           </div>
         </div>
 

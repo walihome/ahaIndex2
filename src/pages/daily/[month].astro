@@ -121,7 +121,7 @@ const pageDesc = `在 AmazingIndex 探索 ${year}年${MONTH_NAMES[monthNum - 1]}
                         <div class="dh-date">{day.snapshot_date.substring(5).replace('-', '.')}</div>
                         <div class="dh-weekday">{weekday}</div>
                         <div class="dh-score">{day.aha_score.toFixed(1)}</div>
-                        <div class="dh-delta" style="color: var(--green);">{day.aha_delta}</div>
+                        <div class="dh-delta" style={`color: ${day.aha_delta.startsWith('-') ? 'var(--red, #dc2626)' : 'var(--green)'};`}>{day.aha_delta}</div>
                         <div class="dh-top">{day.top_story_title}</div>
                         <div class="dh-count">{day.item_count} 篇</div>
                         <div class="dh-bar">

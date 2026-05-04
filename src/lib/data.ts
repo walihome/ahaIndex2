@@ -114,7 +114,7 @@ export const getGlobalStats = memo<GlobalStats>('globalStats', async () => {
     totalItems += items.length;
     if (items.length > 0) {
       const dayScore =
-        items.reduce((s, i) => s + (i.aha_index || 0), 0) / items.length;
+        items.reduce((s, i) => s + (i.aha_index || 0), 0) / items.length * 100;
       totalScore += dayScore;
       if (dayScore > peakScore) peakScore = dayScore;
     }
@@ -153,7 +153,7 @@ export async function getMonthlyArchives(year: number): Promise<MonthlyArchive[]
       itemCount += items.length;
       if (items.length > 0) {
         const dayScore =
-          items.reduce((s, i) => s + (i.aha_index || 0), 0) / items.length;
+          items.reduce((s, i) => s + (i.aha_index || 0), 0) / items.length * 100;
         totalScore += dayScore;
         if (dayScore > peakScore) {
           peakScore = dayScore;
@@ -217,7 +217,7 @@ export async function getWeeklyArchives(
       itemCount += items.length;
       if (items.length > 0) {
         const dayScore =
-          items.reduce((s, i) => s + (i.aha_index || 0), 0) / items.length;
+          items.reduce((s, i) => s + (i.aha_index || 0), 0) / items.length * 100;
         totalScore += dayScore;
         if (dayScore > peakScore) {
           peakScore = dayScore;
@@ -253,11 +253,12 @@ export async function getDailyArchives(
   const monthDates = dates.filter((d) => d.startsWith(monthPrefix));
 
   const result: DailyArchive[] = [];
-  for (const d of monthDates) {
+  const sortedDates = [...monthDates].sort();
+  for (const d of sortedDates) {
     const items = await getItemsByDate(d);
     const dayScore =
       items.length > 0
-        ? items.reduce((s, i) => s + (i.aha_index || 0), 0) / items.length
+        ? items.reduce((s, i) => s + (i.aha_index || 0), 0) / items.length * 100
         : 0;
     const sorted = [...items].sort(
       (a, b) => (b.aha_index || 0) - (a.aha_index || 0),
@@ -267,7 +268,7 @@ export async function getDailyArchives(
     result.push({
       snapshot_date: d,
       aha_score: dayScore,
-      aha_delta: '+0.0',
+      aha_delta: '',
       item_count: items.length,
       top_story_title: top
         ? (top.processed_title || top.title || '')
@@ -278,6 +279,17 @@ export async function getDailyArchives(
       timeliness_score: 0,
       impact_score: 0,
     });
+  }
+
+  // Compute aha_delta between consecutive days
+  for (let i = 0; i < result.length; i++) {
+    if (i === 0) {
+      result[i].aha_delta = '';
+    } else {
+      const delta = result[i].aha_score - result[i - 1].aha_score;
+      const sign = delta >= 0 ? '+' : '';
+      result[i].aha_delta = `${sign}${delta.toFixed(1)}`;
+    }
   }
 
   return result.sort((a, b) => b.snapshot_date.localeCompare(a.snapshot_date));

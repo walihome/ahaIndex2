@@ -12,8 +12,16 @@ const { date } = Astro.params;
 const items = await getItemsByDate(date!);
 const stats = await getGlobalStats();
 
-const now = new Date();
-const days = await getDailyArchives(now.getFullYear(), now.getMonth() + 1);
+const dateObj = new Date(date! + 'T00:00:00');
+const curMonthDays = await getDailyArchives(dateObj.getFullYear(), dateObj.getMonth() + 1);
+// If that month has fewer than 7 days around this date, also fetch previous month
+let days = curMonthDays;
+if (curMonthDays.length < 7) {
+  const prevMonth = dateObj.getMonth() === 0 ? 12 : dateObj.getMonth();
+  const prevYear = dateObj.getMonth() === 0 ? dateObj.getFullYear() - 1 : dateObj.getFullYear();
+  const prevMonthDays = await getDailyArchives(prevYear, prevMonth);
+  days = [...curMonthDays, ...prevMonthDays].sort((a, b) => b.snapshot_date.localeCompare(a.snapshot_date));
+}
 
 const categories = ['全部', ...Array.from(new Set(items.map(item => item.category).filter(Boolean) as string[]))];
 

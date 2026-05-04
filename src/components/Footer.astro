@@ -36,7 +36,7 @@ const dateStr = today.getFullYear() + '.' +
   </div>
   <div class="footer-inner">
     <span>© {today.getFullYear()} AmazingIndex · The Absolute Threshold</span>
-    <span>Vol. {today.getMonth() + 1} · Issue {dateStr}</span>
+    <span>Vol. {today.getFullYear()}.{String(today.getMonth() + 1).padStart(2, '0')} · Issue {dateStr}</span>
     <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: none;">浙ICP备2022023772号</a>
     <span>版权所有 · All rights reserved</span>
   </div>

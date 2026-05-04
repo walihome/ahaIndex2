@@ -8,7 +8,15 @@ const items = latestDate ? await getItemsByDate(latestDate) : [];
 const stats = await getGlobalStats();
 
 const now = new Date();
-const days = await getDailyArchives(now.getFullYear(), now.getMonth() + 1);
+const curMonthDays = await getDailyArchives(now.getFullYear(), now.getMonth() + 1);
+// If current month has fewer than 7 days, also fetch previous month to fill the 7-day chart
+let days = curMonthDays;
+if (curMonthDays.length < 7) {
+  const prevMonth = now.getMonth() === 0 ? 12 : now.getMonth();
+  const prevYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+  const prevMonthDays = await getDailyArchives(prevYear, prevMonth);
+  days = [...curMonthDays, ...prevMonthDays].sort((a, b) => b.snapshot_date.localeCompare(a.snapshot_date));
+}
 
 const categories = ['全部', ...Array.from(new Set(items.map(item => item.category).filter(Boolean) as string[]))];
 ---

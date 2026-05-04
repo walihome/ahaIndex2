@@ -22,7 +22,7 @@ const snapshotDate = date || (items.length > 0 ? items[0].snapshot_date : undefi
 ---
 
 <Masthead items={items} />
-<NavBar categories={categories} />
+<NavBar categories={categories} date={snapshotDate} />
 
 <div class="layout">
   <main class="main-col">
