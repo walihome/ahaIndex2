@@ -1,0 +1,149 @@
+---
+/**
+ * HeatmapGrid: track × date 热力矩阵
+ * Props:
+ *   projects: ProjectEntry[]   — 聚合后的项目列表
+ *   tracks:   TrackInfo[]      — 赛道列表
+ *   dates:    string[]         — 所有日期
+ */
+interface Project {
+  subject_id: string;
+  slug: string;
+  display_name: string;
+  track_id: string | null;
+  track_name: string | null;
+  track_group: string | null;
+  aha_current: number;
+  delta: string;
+  summary: string | null;
+  timeline: { date: string; aha: number }[];
+}
+
+interface Track {
+  id: string;
+  slug: string;
+  display_name: string;
+  display_name_en: string;
+  group_name: string;
+  cover_color: string;
+}
+
+interface Props {
+  projects: Project[];
+  tracks: Track[];
+  dates: string[];
+  activeTrack?: string;
+}
+
+const { projects, tracks, dates, activeTrack = 'all' } = Astro.props;
+
+// 过滤项目（按 track）
+const filteredProjects = activeTrack === 'all'
+  ? projects
+  : projects.filter(p => p.track_id === activeTrack);
+
+// 按 track 分组
+const trackGroups = new Map<string, Project[]>();
+for (const p of filteredProjects) {
+  const tid = p.track_id || '__unmatched';
+  if (!trackGroups.has(tid)) trackGroups.set(tid, []);
+  trackGroups.get(tid)!.push(p);
+}
+
+// 只显示有项目的 track
+const activeTracks = tracks.filter(t => trackGroups.has(t.id));
+// 加上未匹配的
+if (trackGroups.has('__unmatched')) {
+  activeTracks.push({ id: '__unmatched', slug: 'other', display_name: '未分类', display_name_en: 'Other', group_name: '', cover_color: '#888' } as Track);
+}
+
+// 取最近 N 个日期显示
+const displayDates = dates.slice(-14);
+
+// 计算 score 的热力等级 (0-6)
+function getHeatLevel(score: number): number {
+  if (score <= 0) return 0;
+  if (score < 20) return 1;
+  if (score < 40) return 2;
+  if (score < 55) return 3;
+  if (score < 70) return 4;
+  if (score < 85) return 5;
+  return 6;
+}
+
+// 构建 subject_id + date → score 的查找表
+const scoreMap = new Map<string, number>();
+for (const p of filteredProjects) {
+  for (const t of p.timeline) {
+    scoreMap.set(`${p.subject_id}:${t.date}`, t.aha);
+  }
+}
+
+// 格式化日期列头
+function formatDateHeader(d: string): string {
+  const parts = d.split('-');
+  return `${parts[1]}/${parts[2]}`;
+}
+---
+
+<div class="heatmap-container">
+  <div
+    class="heatmap-grid"
+    style={`grid-template-columns: 200px repeat(${displayDates.length}, minmax(28px, 1fr))`}
+  >
+    {/* 列头：空角 + 日期 */}
+    <div></div>
+    {displayDates.map(d => (
+      <div class="hm-col-header">{formatDateHeader(d)}</div>
+    ))}
+
+    {/* 每个 track 一行 */}
+    {activeTracks.map(track => {
+      const trackProjects = trackGroups.get(track.id) || [];
+      return (
+        <>
+          <div class="hm-row-header">
+            <span class="hm-track-name" style={track.cover_color ? `border-left: 3px solid ${track.cover_color}; padding-left: 8px;` : ''}>
+              {track.display_name}
+            </span>
+            <span class="hm-track-count">{trackProjects.length}</span>
+          </div>
+          {displayDates.map(d => {
+            // 该 track 在该日期的平均分
+            let total = 0;
+            let count = 0;
+            for (const p of trackProjects) {
+              const key = `${p.subject_id}:${d}`;
+              const s = scoreMap.get(key);
+              if (s !== undefined) {
+                total += s;
+                count++;
+              }
+            }
+            const avg = count > 0 ? total / count : 0;
+            const level = getHeatLevel(avg);
+            return (
+              <div
+                class={`hm-cell ${level === 0 ? 'empty' : `level-${level}`}`}
+                data-track={track.id}
+                data-date={d}
+                title={`${track.display_name} · ${d}: ${avg.toFixed(0)}`}
+              />
+            );
+          })}
+        </>
+      );
+    })}
+  </div>
+
+  {/* 图例 */}
+  <div class="heatmap-legend">
+    <span>较冷</span>
+    <div class="legend-gradient">
+      {[1,2,3,4,5,6].map(l => (
+        <div class={`legend-block level-${l}`} />
+      ))}
+    </div>
+    <span>较热</span>
+  </div>
+</div>

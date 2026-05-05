@@ -1,0 +1,98 @@
+---
+/**
+ * DrillPanel: 点击热力格子后展示该 track×date 的项目列表
+ * 纯静态渲染，交互由内联 script 处理
+ */
+interface Project {
+  subject_id: string;
+  slug: string;
+  display_name: string;
+  track_id: string | null;
+  aha_current: number;
+  delta: string;
+  summary: string | null;
+  timeline: { date: string; aha: number }[];
+}
+
+interface Props {
+  projects: Project[];
+}
+
+const { projects } = Astro.props;
+---
+
+<div class="drill-panel" id="drill-panel">
+  <div class="drill-header">
+    <span class="drill-title" id="drill-title"></span>
+    <button class="drill-close" id="drill-close" aria-label="关闭">&times;</button>
+  </div>
+  <div class="drill-list" id="drill-list"></div>
+</div>
+
+<script is:inline define:vars={{ projects }}>
+(function() {
+  const panel = document.getElementById('drill-panel');
+  const title = document.getElementById('drill-title');
+  const list = document.getElementById('drill-list');
+  const closeBtn = document.getElementById('drill-close');
+
+  if (!panel || !title || !list || !closeBtn) return;
+
+  // 构建 subject_id + date → score 的查找表
+  const scoreMap = new Map();
+  for (const p of projects) {
+    for (const t of p.timeline) {
+      scoreMap.set(`${p.subject_id}:${t.date}`, t.aha);
+    }
+  }
+
+  // 监听热力格子点击
+  document.addEventListener('click', (e) => {
+    const cell = e.target.closest('.hm-cell:not(.empty)');
+    if (!cell) return;
+
+    const trackId = cell.dataset.track;
+    const date = cell.dataset.date;
+    if (!trackId || !date) return;
+
+    // 找到该 track 的项目
+    const trackProjects = projects.filter(p => (p.track_id || '__unmatched') === trackId);
+    // 按该日期的分数排序
+    const scored = trackProjects
+      .map(p => ({
+        ...p,
+        dateScore: scoreMap.get(`${p.subject_id}:${date}`) || 0,
+      }))
+      .filter(p => p.dateScore > 0)
+      .sort((a, b) => b.dateScore - a.dateScore);
+
+    // 找 track 名称
+    const trackNameEl = cell.closest('.heatmap-grid')?.querySelector(
+      `.hm-row-header:nth-child(${Array.from(cell.parentElement?.children || []).indexOf(cell) + 1})`
+    );
+
+    title.textContent = `${date} · ${scored.length} 个项目`;
+
+    list.innerHTML = scored.map((p, i) => `
+      <div class="drill-item">
+        <div class="drill-rank">${String(i + 1).padStart(2, '0')}</div>
+        <div>
+          <a href="/projects/${p.slug}" class="drill-name">${p.display_name}</a>
+          ${p.summary ? `<div class="drill-summary">${p.summary}</div>` : ''}
+        </div>
+        <div>
+          <div class="drill-score">${p.dateScore.toFixed(0)}</div>
+          ${p.delta ? `<div class="drill-delta ${p.delta.startsWith('+') ? 'up' : 'down'}">${p.delta}</div>` : ''}
+        </div>
+      </div>
+    `).join('');
+
+    panel.classList.add('open');
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+
+  closeBtn.addEventListener('click', () => {
+    panel.classList.remove('open');
+  });
+})();
+</script>

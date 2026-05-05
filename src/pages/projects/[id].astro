@@ -1,0 +1,55 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Masthead from '../../components/Masthead.astro';
+import Footer from '../../components/Footer.astro';
+import ProjectDetailComponent from '../../components/projects/ProjectDetail.astro';
+import { getProjects, getProjectById, getProjectDates } from '../../lib/data';
+
+export async function getStaticPaths() {
+  const projects = await getProjects();
+  return projects.map(p => ({
+    params: { id: p.subject_id },
+    props: { project: p },
+  }));
+}
+
+const { id } = Astro.params;
+const { project } = Astro.props;
+
+if (!project) {
+  return Astro.redirect('/projects');
+}
+
+const allDates = await getProjectDates();
+
+const pageTitle = `${project.display_name} | AmazingIndex 项目详情`;
+const pageDesc = project.summary
+  ? `${project.display_name} - ${project.summary.slice(0, 120)}`
+  : `${project.display_name} 的 AHA Index 追踪与分析`;
+---
+
+<BaseLayout
+  title={pageTitle}
+  description={pageDesc}
+  canonicalUrl={`https://www.amazingindex.com/projects/${id}`}
+  ogTitle={pageTitle}
+  ogDescription={pageDesc}
+  ogUrl={`https://www.amazingindex.com/projects/${id}`}
+>
+  <Masthead />
+
+  <nav class="nav-bar">
+    <div class="nav-inner">
+      <div class="nav-tabs">
+        <a href="/" class="nav-tab">日报</a>
+        <a href="/projects" class="nav-tab active">项目索引</a>
+        <a href="/history" class="nav-tab">历史</a>
+        <a href="/about" class="nav-tab">关于</a>
+      </div>
+    </div>
+  </nav>
+
+  <ProjectDetailComponent project={project} allDates={allDates} />
+
+  <Footer />
+</BaseLayout>

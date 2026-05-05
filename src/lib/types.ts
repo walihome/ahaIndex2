@@ -78,3 +78,95 @@ export interface GlobalStats {
   avg_aha_score: number;
   peak_aha_score: number;
 }
+
+// ─── Project Heatmap types ──────────────────────────────
+
+export interface ProjectHeatmapRow {
+  subject_id: string;
+  subject_slug: string;
+  subject_name: string;
+  subject_type: string;
+  track_id: string | null;
+  track_name: string | null;
+  track_group: string | null;
+  snapshot_date: string;
+  score: number | null;
+  score_100: number | null;
+  role: string | null;
+  source_name: string | null;
+  tags: string[] | null;
+  summary: string | null;
+  first_seen_at: string | null;
+  last_seen_at: string | null;
+  mention_count: number | null;
+  related_data: RelatedData | null;
+}
+
+export interface RelatedData {
+  related: RelatedProject[];
+  competitors: CompetitorEntry[];
+}
+
+export interface TimelineEntry {
+  date: string;
+  aha: number;
+  role?: string;
+  source_name?: string;
+}
+
+export interface RelatedProject {
+  subject_id: string;
+  slug: string;
+  display_name: string;
+  strength: number;
+  kind: string;
+  co_appearances: number;
+  timeline: { date: string; aha: number }[];
+}
+
+export interface CompetitorEntry {
+  subject_id: string;
+  slug: string;
+  display_name: string;
+  strength: number;
+  kind: string;
+  co_appearances: number;
+  source: string;
+  aha_current: number;
+  overlap_tags: string[];
+  diff: string;
+}
+
+export interface ProjectEntry {
+  subject_id: string;
+  slug: string;
+  display_name: string;
+  type: string;
+  tags: string[];
+  summary: string | null;
+  first_seen_at: string | null;
+  last_seen_at: string | null;
+  mention_count: number;
+  track_id: string | null;
+  track_name: string | null;
+  track_group: string | null;
+  aha_current: number;
+  aha_peak: number;
+  delta: string;
+  appearances: number;
+  rank: number;
+  timeline: TimelineEntry[];
+  related: RelatedProject[];
+  competitors: CompetitorEntry[];
+}
+
+export interface TrackInfo {
+  id: string;
+  slug: string;
+  display_name: string;
+  display_name_en: string;
+  group_name: string;
+  description: string;
+  cover_color: string;
+  display_order: number;
+}
