@@ -133,6 +133,27 @@ function formatNumber(num: number) {
           </div>
         )}
 
+        {(() => {
+          const videoUrl = extra?.media_urls?.find((u: string) => /\.(mp4|webm|mov)(\?|#|$)/i.test(u));
+          const imageUrl = extra?.media_urls?.find((u: string) => /\.(png|jpg|jpeg|webp|gif)(\?|#|$)/i.test(u));
+          if (videoUrl) return (
+            <div style="margin-bottom: 24px;">
+              <video src={videoUrl} poster={extra.thumbnail_url || undefined} controls muted playsinline preload="metadata" style="width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border); background: #000;" />
+            </div>
+          );
+          if (imageUrl) return (
+            <div style="margin-bottom: 24px;">
+              <img src={imageUrl} alt={item.processed_title || '配图'} loading="lazy" width="800" height="450" style="width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border);" onerror="this.parentElement.style.display='none'" />
+            </div>
+          );
+          if (extra?.thumbnail_url) return (
+            <div style="margin-bottom: 24px;">
+              <img src={extra.thumbnail_url} alt={item.processed_title || '配图'} loading="lazy" width="800" height="450" style="width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border);" onerror="this.parentElement.style.display='none'" />
+            </div>
+          );
+          return null;
+        })()}
+
         <div class="insight-block">
           <div class="insight-text">
             <em style="display: block; margin-bottom: 8px;">Editor's Note:</em>
