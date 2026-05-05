@@ -277,13 +277,8 @@
   grid-template-columns: 56px 1fr;
   grid-template-rows: auto auto;
   gap: 4px 14px;
-  text-decoration: none;
-  color: inherit;
-  cursor: pointer;
-  transition: background 0.15s;
 }
 
-.drill-row:hover { background: rgba(192,57,43,0.04); }
 .drill-row:last-child { border-bottom: none; }
 
 .drill-aha {
