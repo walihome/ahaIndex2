@@ -38,6 +38,14 @@ const paragraphs = (item.expert_insight || '').split('\n').filter((p: string) =>
 const dateStr = item.snapshot_date ? item.snapshot_date.replace(/-/g, '.') : '';
 const backUrl = `/daily/${date}`;
 
+const enrichment = extra?.enrichment || {};
+const sentimentLabel: Record<string, string> = { positive: '正面', mixed: '意见分歧', negative: '负面' };
+const sentimentClass: Record<string, string> = { positive: 'positive', mixed: 'mixed', negative: 'negative' };
+const maturityLabel: Record<string, string> = { production: 'Production', beta: 'Beta', experimental: 'Experimental' };
+const maturityClass: Record<string, string> = { production: 'production', beta: 'beta', experimental: 'experimental' };
+
+const tweets: any[] = extra?.tweets || [];
+
 function formatNumber(num: number) {
   if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
   return String(num);
@@ -147,6 +155,127 @@ function formatNumber(num: number) {
               style="width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border);"
               onerror="this.parentElement.style.display='none'"
             />
+          </div>
+        )}
+
+        {/* 社区反馈区块 */}
+        {enrichment.sentiment && (
+          <div class="enrichment-section">
+            <div class="enrichment-title">社区反馈</div>
+            <div class="enrichment-badges">
+              <span class={`enrichment-badge ${sentimentClass[enrichment.sentiment] || ''}`}>
+                {sentimentLabel[enrichment.sentiment] || enrichment.sentiment}
+              </span>
+              {enrichment.comment_count && (
+                <span class="enrichment-badge neutral">💬 {enrichment.comment_count} 条评论</span>
+              )}
+            </div>
+            {enrichment.core_debate && (
+              <p class="enrichment-text">核心争论：{enrichment.core_debate}</p>
+            )}
+            {enrichment.top_comments_raw?.length > 0 && (
+              <div class="enrichment-comments">
+                {enrichment.top_comments_raw.map((c: any) => (
+                  <div class="enrichment-comment">
+                    <div class="enrichment-comment-header">
+                      <span class="enrichment-comment-author">{c.author}</span>
+                      {c.points > 0 && <span class="enrichment-comment-points">▲ {c.points}</span>}
+                    </div>
+                    <p class="enrichment-comment-text">{c.text}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {enrichment.alternatives?.length > 0 && (
+              <div class="enrichment-tags">
+                <span class="enrichment-tag-label">替代方案：</span>
+                {enrichment.alternatives.map((alt: string) => (
+                  <span class="enrichment-tag">{alt}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 生态分析区块 */}
+        {enrichment.maturity && (
+          <div class="enrichment-section">
+            <div class="enrichment-title">生态分析</div>
+            <div class="enrichment-badges">
+              <span class={`enrichment-badge ${maturityClass[enrichment.maturity] || ''}`}>
+                {maturityLabel[enrichment.maturity] || enrichment.maturity}
+              </span>
+            </div>
+            {enrichment.ecosystem_position && (
+              <p class="enrichment-text">{enrichment.ecosystem_position}</p>
+            )}
+            {enrichment.unique_value && (
+              <p class="enrichment-text">独特价值：{enrichment.unique_value}</p>
+            )}
+            {enrichment.competitors?.length > 0 && (
+              <div class="enrichment-competitors">
+                <div class="enrichment-tag-label">竞品：</div>
+                {enrichment.competitors.map((c: any) => (
+                  <div class="enrichment-competitor">
+                    <a href={`https://github.com/${c.name}`} target="_blank" rel="noopener noreferrer" class="enrichment-competitor-name">
+                      {c.name}
+                    </a>
+                    {c.stars > 0 && <span class="enrichment-competitor-stars">★ {formatNumber(c.stars)}</span>}
+                    {c.comparison && <span class="enrichment-competitor-desc">{c.comparison}</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 相关内容区块 */}
+        {enrichment.related_articles?.length > 0 && (
+          <div class="enrichment-section">
+            <div class="enrichment-title">相关内容</div>
+            <div class="enrichment-articles">
+              {enrichment.related_articles.map((a: any) => (
+                <a href={a.url} target="_blank" rel="noopener noreferrer" class="enrichment-article">
+                  <span class="enrichment-article-title">{a.title}</span>
+                  {a.snippet && <span class="enrichment-article-snippet">{a.snippet}</span>}
+                </a>
+              ))}
+            </div>
+            {enrichment.key_discussions?.length > 0 && (
+              <div class="enrichment-discussions">
+                <div class="enrichment-tag-label">社区讨论：</div>
+                {enrichment.key_discussions.map((d: any) => (
+                  <a href={d.url} target="_blank" rel="noopener noreferrer" class="enrichment-discussion">
+                    <span class="enrichment-discussion-source">{d.source}</span>
+                    <span class="enrichment-discussion-summary">{d.summary}</span>
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Twitter 推文列表 */}
+        {item.content_type === 'tweet_digest' && tweets.length > 0 && (
+          <div class="enrichment-section">
+            <div class="enrichment-title">推文合集 · {tweets.length} 条</div>
+            <div class="enrichment-tweets">
+              {tweets.map((t: any) => (
+                <div class="enrichment-tweet">
+                  <div class="enrichment-tweet-header">
+                    <span class="enrichment-tweet-author">@{t.author}</span>
+                    <span class="enrichment-tweet-stats">
+                      {t.likes > 0 && <span>❤️ {formatNumber(t.likes)}</span>}
+                      {t.retweets > 0 && <span>🔁 {formatNumber(t.retweets)}</span>}
+                    </span>
+                  </div>
+                  <p class="enrichment-tweet-text">{t.text}</p>
+                  {t.url && (
+                    <a href={t.url} target="_blank" rel="noopener noreferrer" class="enrichment-tweet-link">查看原文 →</a>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
