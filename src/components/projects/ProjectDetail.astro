@@ -1,0 +1,148 @@
+---
+/**
+ * ProjectDetail: 项目详情页主体
+ * Props:
+ *   project: ProjectEntry
+ *   allDates: string[]
+ */
+interface TimelineEntry {
+  date: string;
+  aha: number;
+}
+
+interface RelatedProject {
+  subject_id: string;
+  slug: string;
+  display_name: string;
+  strength: number;
+  kind: string;
+  co_appearances: number;
+  timeline: { date: string; aha: number }[];
+}
+
+interface CompetitorEntry {
+  subject_id: string;
+  slug: string;
+  display_name: string;
+  strength: number;
+  kind: string;
+  co_appearances: number;
+  source: string;
+  aha_current: number;
+  overlap_tags: string[];
+  diff: string;
+}
+
+interface Project {
+  subject_id: string;
+  slug: string;
+  display_name: string;
+  type: string;
+  tags: string[];
+  summary: string | null;
+  first_seen_at: string | null;
+  last_seen_at: string | null;
+  mention_count: number;
+  track_id: string | null;
+  track_name: string | null;
+  track_group: string | null;
+  aha_current: number;
+  aha_peak: number;
+  delta: string;
+  appearances: number;
+  rank: number;
+  timeline: TimelineEntry[];
+  related: RelatedProject[];
+  competitors: CompetitorEntry[];
+}
+
+interface Props {
+  project: Project;
+  allDates: string[];
+}
+
+import TimelineChart from './TimelineChart.astro';
+import ConstellationGrid from './ConstellationGrid.astro';
+import CompetitorCard from './CompetitorCard.astro';
+
+const { project, allDates } = Astro.props;
+---
+
+<div class="project-detail">
+  {/* Hero */}
+  <div class="project-hero">
+    <a href="/projects" class="project-back">&larr; 返回项目索引</a>
+    <h1 class="project-hero-title">{project.display_name}</h1>
+    {project.summary && (
+      <p class="project-hero-desc">{project.summary}</p>
+    )}
+  </div>
+
+  {/* Stats strip */}
+  <div class="project-stats">
+    <div class="stat-item">
+      <div class="stat-label">AHA Index</div>
+      <div class="stat-value accent">{project.aha_current.toFixed(0)}</div>
+      {project.delta && (
+        <div class={`stat-delta ${project.delta.startsWith('+') ? 'up' : 'down'}`}>
+          {project.delta}
+        </div>
+      )}
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">峰值</div>
+      <div class="stat-value">{project.aha_peak.toFixed(0)}</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">提及次数</div>
+      <div class="stat-value">{project.mention_count}</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">出现天数</div>
+      <div class="stat-value">{project.appearances}</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-label">排名</div>
+      <div class="stat-value">#{project.rank}</div>
+    </div>
+    {project.track_name && (
+      <div class="stat-item">
+        <div class="stat-label">赛道</div>
+        <div class="stat-value" style="font-size: 16px; font-family: 'DM Sans', sans-serif;">{project.track_name}</div>
+      </div>
+    )}
+  </div>
+
+  {/* Tags */}
+  {project.tags.length > 0 && (
+    <div class="project-tags">
+      {project.tags.slice(0, 10).map(tag => (
+        <span class="project-tag">{tag}</span>
+      ))}
+    </div>
+  )}
+
+  {/* Timeline */}
+  {project.timeline.length > 0 && (
+    <div class="section-block">
+      <div class="section-label">时间线</div>
+      <TimelineChart timeline={project.timeline} />
+    </div>
+  )}
+
+  {/* Constellation (Related) */}
+  {project.related.length > 0 && (
+    <div class="section-block">
+      <div class="section-label">关联项目星座</div>
+      <ConstellationGrid related={project.related} dates={allDates} />
+    </div>
+  )}
+
+  {/* Competitors */}
+  {project.competitors.length > 0 && (
+    <div class="section-block">
+      <div class="section-label">竞品对照</div>
+      <CompetitorCard competitors={project.competitors} />
+    </div>
+  )}
+</div>

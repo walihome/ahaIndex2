@@ -1,0 +1,64 @@
+---
+/**
+ * CompetitorCard: 竞品对照卡片列表
+ * Props:
+ *   competitors: CompetitorEntry[]
+ */
+interface CompetitorEntry {
+  subject_id: string;
+  slug: string;
+  display_name: string;
+  strength: number;
+  kind: string;
+  co_appearances: number;
+  source: string;
+  aha_current: number;
+  overlap_tags: string[];
+  diff: string;
+}
+
+interface Props {
+  competitors: CompetitorEntry[];
+}
+
+const { competitors } = Astro.props;
+
+if (competitors.length === 0) return;
+---
+
+<div class="competitor-grid">
+  {competitors.map(comp => (
+    <div class="competitor-card">
+      <div class="competitor-header">
+        <div>
+          <a href={`/projects/${comp.slug}`} class="competitor-name" style="color: inherit; text-decoration: none;">
+            {comp.display_name}
+          </a>
+          <div class="competitor-kind">{comp.kind}</div>
+        </div>
+        <div class="competitor-score">{comp.aha_current.toFixed(0)}</div>
+      </div>
+
+      {comp.diff && (
+        <div class="competitor-diff">{comp.diff}</div>
+      )}
+
+      {comp.overlap_tags && comp.overlap_tags.length > 0 && (
+        <div class="competitor-tags">
+          {comp.overlap_tags.map(tag => (
+            <span class="competitor-tag">{tag}</span>
+          ))}
+        </div>
+      )}
+
+      <div class="competitor-meta">
+        <span class="competitor-source">
+          {comp.source === 'enricher' ? 'LLM 分析' : '共现分析'}
+        </span>
+        {comp.co_appearances > 0 && (
+          <span>共现 {comp.co_appearances} 次</span>
+        )}
+      </div>
+    </div>
+  ))}
+</div>

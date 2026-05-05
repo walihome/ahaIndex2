@@ -1,0 +1,323 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Masthead from '../../components/Masthead.astro';
+import Footer from '../../components/Footer.astro';
+import { getProjects, getProjectDates } from '../../lib/data';
+
+const projects = await getProjects();
+const allDates = await getProjectDates();
+
+// Group projects by track_name (category)
+const catMap = new Map<string, typeof projects>();
+for (const p of projects) {
+  const cat = p.track_name || '未分类';
+  if (!catMap.has(cat)) catMap.set(cat, []);
+  catMap.get(cat)!.push(p);
+}
+const cats = [...catMap.entries()].sort((a, b) => b[1].length - a[1].length);
+
+// Stride-based date sampling: ~18 columns max
+const stride = Math.max(1, Math.ceil(allDates.length / 18));
+const cols = allDates.filter((_, i) => i % stride === 0 || i === allDates.length - 1);
+
+// Build cellValue lookup: cat×date → {count, projects[]}
+function cellValue(cat: string, date: string) {
+  const ps = catMap.get(cat) || [];
+  const matched = ps.filter(p => p.timeline.some(t => t.date === date));
+  return { count: matched.length, projects: matched };
+}
+
+// Find max count for intensity scaling
+let maxCount = 1;
+for (const [cat] of cats) {
+  for (const d of cols) {
+    const v = cellValue(cat, d);
+    if (v.count > maxCount) maxCount = v.count;
+  }
+}
+
+// Format date as "DD MON"
+function fmtDate(d: string): string {
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const dt = new Date(d + 'T00:00:00Z');
+  return `${String(dt.getUTCDate()).padStart(2, '0')} ${months[dt.getUTCMonth()]}`;
+}
+
+const today = allDates[allDates.length - 1] || '';
+
+// Serialize projects for client-side drill panel
+const projectsJSON = JSON.stringify(projects.map(p => ({
+  subject_id: p.subject_id,
+  slug: p.slug,
+  display_name: p.display_name,
+  track_name: p.track_name || '未分类',
+  tags: p.tags,
+  summary: p.summary,
+  aha_current: p.aha_current,
+  aha_peak: p.aha_peak,
+  delta: p.delta,
+  rank: p.rank,
+  timeline: p.timeline,
+})));
+
+const pageTitle = '开源项目热力矩阵 | AmazingIndex';
+const pageDesc = '基于 AHA Index 量化算法，追踪 AI 开源项目在各赛道的活跃度变化。热力矩阵展示 track × date 维度的项目密度。';
+---
+
+<BaseLayout
+  title={pageTitle}
+  description={pageDesc}
+  canonicalUrl="https://www.amazingindex.com/projects"
+  ogTitle={pageTitle}
+  ogDescription={pageDesc}
+  ogUrl="https://www.amazingindex.com/projects"
+>
+  <Masthead />
+
+  <nav class="nav-bar">
+    <div class="nav-inner">
+      <div class="nav-tabs">
+        <a href="/" class="nav-tab">日报</a>
+        <a href="/projects" class="nav-tab active">项目索引</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="projects-page">
+    {/* Page Hero */}
+    <header class="page-hero">
+      <div class="vol">Vol. III · Heat Matrix · {today}</div>
+      <h1>热力<span class="it">矩阵</span></h1>
+      <p class="subtitle">
+        领域 × 时间的二维密度图。每一格是一个领域在某一天有多少项目入榜——
+        颜色越深，当日越拥挤。点击任一格子，向下钻到该领域当日的全部项目快照。
+      </p>
+    </header>
+
+    {/* Toolbar */}
+    <div class="ex-toolbar">
+      <div class="ex-toolbar-label">{projects.length} 个项目 · {allDates.length} 天 · 点击格子展开</div>
+      <div class="ex-search">
+        <input type="text" id="search-input" placeholder="搜索 标题 / 标签 / 来源…" />
+        <span class="ex-count" id="search-count">{projects.length} / {projects.length}</span>
+      </div>
+    </div>
+
+    {/* Heatmap Body */}
+    <div class="ex-body">
+      <div class="hm-wrap" id="hm-wrap">
+        <div class="hm-grid" style={`grid-template-columns: 200px repeat(${cols.length}, minmax(28px, 1fr))`}>
+          {/* Corner */}
+          <div class="hm-corner"></div>
+
+          {/* Column headers (dates) */}
+          {cols.map(d => (
+            <div class="hm-colh">{fmtDate(d)}</div>
+          ))}
+
+          {/* Rows: one per category */}
+          {cats.map(([cat, ps]) => {
+            const trackId = ps[0]?.track_id || '__unmatched';
+            return (
+              <>
+                {/* Row header */}
+                <div class="hm-rowh" data-cat={cat}>
+                  <div class="hm-rowh-name">{cat}</div>
+                  <div class="hm-rowh-count">{ps.length} 个项目</div>
+                </div>
+
+                {/* Cells */}
+                {cols.map(d => {
+                  const v = cellValue(cat, d);
+                  const intensity = maxCount > 0 ? v.count / maxCount : 0;
+                  const bg = v.count > 0
+                    ? `rgba(192,57,43,${(0.08 + intensity * 0.6).toFixed(2)})`
+                    : 'transparent';
+                  return (
+                    <div
+                      class={`hm-cell${v.count > 0 ? ' has' : ''}`}
+                      style={`background: ${bg}`}
+                      data-cat={cat}
+                      data-date={d}
+                      data-count={v.count}
+                      title={v.count > 0 ? `${cat} · ${d} · ${v.count} 个项目` : ''}
+                    >
+                      {v.count > 0 && <span class="hm-num">{v.count}</span>}
+                    </div>
+                  );
+                })}
+              </>
+            );
+          })}
+        </div>
+
+        {/* Legend */}
+        <div class="hm-legend">
+          <span>较冷</span>
+          <div class="hm-legend-bar"></div>
+          <span>较热</span>
+          <span class="hm-legend-note">· 点击格子 → 看该领域当日入榜项目</span>
+        </div>
+      </div>
+    </div>
+
+    {/* Drill Panel (fixed position, shown on cell click) */}
+    <div class="drill" id="drill-panel" style="display: none;">
+      <div class="drill-head">
+        <div class="drill-eyebrow" id="drill-eyebrow"></div>
+        <button class="drill-close" id="drill-close" aria-label="关闭">&times;</button>
+      </div>
+      <div class="drill-body" id="drill-body"></div>
+    </div>
+  </div>
+
+  <Footer />
+</BaseLayout>
+
+<script is:inline define:vars={{ projectsJSON, colsJSON: JSON.stringify(cols) }}>
+(function() {
+  const PROJECTS = JSON.parse(projectsJSON);
+  const COLS = JSON.parse(colsJSON);
+  const catMap = new Map();
+
+  PROJECTS.forEach(p => {
+    if (!catMap.has(p.track_name)) catMap.set(p.track_name, []);
+    catMap.get(p.track_name).push(p);
+  });
+
+  const searchInput = document.getElementById('search-input');
+  const searchCount = document.getElementById('search-count');
+  const hmWrap = document.getElementById('hm-wrap');
+  const drillPanel = document.getElementById('drill-panel');
+  const drillEyebrow = document.getElementById('drill-eyebrow');
+  const drillBody = document.getElementById('drill-body');
+  const drillClose = document.getElementById('drill-close');
+
+  // ─── Search filtering ───────────────────────────────
+  // Store original cell backgrounds for restore
+  const cellBgMap = new Map();
+  document.querySelectorAll('.hm-cell.has').forEach(cell => {
+    cellBgMap.set(cell, cell.style.background);
+  });
+
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      const q = searchInput.value.toLowerCase().trim();
+      const total = PROJECTS.length;
+
+      if (!q) {
+        // Restore all cells to original state
+        document.querySelectorAll('.hm-cell').forEach(cell => {
+          cell.style.opacity = '';
+          const orig = cellBgMap.get(cell);
+          if (orig) cell.style.background = orig;
+        });
+        document.querySelectorAll('.hm-rowh').forEach(r => r.style.opacity = '');
+        document.querySelectorAll('.hm-num').forEach(n => n.style.opacity = '');
+        searchCount.textContent = total + ' / ' + total;
+        return;
+      }
+
+      // Filter projects
+      const matched = PROJECTS.filter(p =>
+        p.display_name.toLowerCase().includes(q) ||
+        p.track_name.toLowerCase().includes(q) ||
+        (p.tags || []).some(t => t.toLowerCase().includes(q))
+      );
+      const matchedIds = new Set(matched.map(p => p.subject_id));
+      searchCount.textContent = matched.length + ' / ' + total;
+
+      // Dim non-matching cells, highlight matching ones
+      document.querySelectorAll('.hm-cell.has').forEach(cell => {
+        const cat = cell.dataset.cat;
+        const date = cell.dataset.date;
+        const catProjects = catMap.get(cat) || [];
+        const hasMatch = catProjects.some(p =>
+          matchedIds.has(p.subject_id) && p.timeline.some(t => t.date === date)
+        );
+        if (hasMatch) {
+          cell.style.opacity = '1';
+          const orig = cellBgMap.get(cell);
+          if (orig) cell.style.background = orig;
+        } else {
+          cell.style.opacity = '0.15';
+          cell.style.background = 'rgba(192,57,43,0.04)';
+        }
+      });
+
+      // Dim empty cells too
+      document.querySelectorAll('.hm-cell:not(.has)').forEach(cell => {
+        cell.style.opacity = '0.15';
+      });
+
+      // Dim non-matching row headers
+      document.querySelectorAll('.hm-rowh').forEach(row => {
+        const cat = row.dataset.cat;
+        const catProjects = catMap.get(cat) || [];
+        const hasAny = catProjects.some(p => matchedIds.has(p.subject_id));
+        row.style.opacity = hasAny ? '1' : '0.25';
+      });
+    });
+  }
+
+  // ─── Drill panel (cell click) ───────────────────────
+  document.addEventListener('click', function(e) {
+    const cell = e.target.closest('.hm-cell.has');
+    if (!cell) {
+      // Close if clicking outside
+      if (drillPanel && !e.target.closest('.drill')) {
+        drillPanel.style.display = 'none';
+        document.querySelectorAll('.hm-cell.picked').forEach(c => c.classList.remove('picked'));
+      }
+      return;
+    }
+
+    const cat = cell.dataset.cat;
+    const date = cell.dataset.date;
+    if (!cat || !date) return;
+
+    // Mark picked cell
+    document.querySelectorAll('.hm-cell.picked').forEach(c => c.classList.remove('picked'));
+    cell.classList.add('picked');
+
+    // Find projects in this category that have this date
+    const catProjects = catMap.get(cat) || [];
+    const matched = catProjects
+      .map(p => ({
+        ...p,
+        ev: p.timeline.find(t => t.date === date),
+      }))
+      .filter(p => p.ev)
+      .sort((a, b) => b.ev.aha - a.ev.aha);
+
+    // Render drill panel
+    drillEyebrow.textContent = cat + ' · ' + date;
+    drillBody.innerHTML = matched.map(p => `
+      <div class="drill-row">
+        <span class="drill-aha">${p.ev.aha.toFixed(1)}</span>
+        <span class="drill-title">${p.display_name.split(' · ')[0]}</span>
+        <span class="drill-note">${p.ev.source_name || p.summary || ''}</span>
+      </div>
+    `).join('');
+
+    drillPanel.style.display = 'flex';
+    drillPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+
+  // Close drill panel
+  if (drillClose) {
+    drillClose.addEventListener('click', function() {
+      drillPanel.style.display = 'none';
+      document.querySelectorAll('.hm-cell.picked').forEach(c => c.classList.remove('picked'));
+    });
+  }
+
+  // ESC to close
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && drillPanel) {
+      drillPanel.style.display = 'none';
+      document.querySelectorAll('.hm-cell.picked').forEach(c => c.classList.remove('picked'));
+    }
+  });
+})();
+</script>

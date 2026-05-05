@@ -1,0 +1,95 @@
+---
+/**
+ * ConstellationGrid: 关联项目 × 时间的星座网格
+ * Props:
+ *   related: RelatedProject[]
+ *   dates:   string[]   — 所有日期
+ */
+interface RelatedProject {
+  subject_id: string;
+  slug: string;
+  display_name: string;
+  strength: number;
+  kind: string;
+  co_appearances: number;
+  timeline: { date: string; aha: number }[];
+}
+
+interface Props {
+  related: RelatedProject[];
+  dates: string[];
+}
+
+const { related, dates } = Astro.props;
+
+if (related.length === 0) return;
+
+// 按 strength 降序，取 top 10
+const top = [...related].sort((a, b) => b.strength - a.strength).slice(0, 10);
+
+// 取最近 14 个日期
+const displayDates = dates.slice(-14);
+
+// 构建查找表
+const scoreMap = new Map<string, number>();
+for (const r of top) {
+  for (const t of r.timeline) {
+    scoreMap.set(`${r.subject_id}:${t.date}`, t.aha);
+  }
+}
+
+// 点大小映射
+function dotSize(score: number): number {
+  if (score <= 0) return 0;
+  return 4 + (score / 100) * 10;
+}
+
+function dotOpacity(score: number): number {
+  if (score <= 0) return 0;
+  return 0.15 + (score / 100) * 0.85;
+}
+---
+
+<div class="constellation-grid">
+  <table class="constellation-table">
+    <thead>
+      <tr>
+        <th></th>
+        {displayDates.map(d => (
+          <th>{d.split('-').slice(1).join('/')}</th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {top.map(r => (
+        <tr>
+          <td class="constellation-row-name">
+            <a href={`/projects/${r.slug}`} style="color: inherit; text-decoration: none;">
+              {r.display_name}
+            </a>
+            <span style="font-size: 8px; color: var(--muted); margin-left: 4px; letter-spacing: 0.1em; text-transform: uppercase;">
+              {r.kind}
+            </span>
+          </td>
+          {displayDates.map(d => {
+            const key = `${r.subject_id}:${d}`;
+            const score = scoreMap.get(key) || 0;
+            const size = dotSize(score);
+            const opacity = dotOpacity(score);
+            return (
+              <td class="constellation-cell">
+                {score > 0 && (
+                  <span
+                    class="constellation-dot"
+                    style={`width: ${size}px; height: ${size}px; background: rgba(192,57,43,${opacity});`}
+                    title={`${r.display_name} · ${d}: ${score.toFixed(0)}`}
+                  />
+                )}
+              </td>
+            );
+          })}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
