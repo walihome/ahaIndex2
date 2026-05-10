@@ -16,9 +16,9 @@
   --red-bg: #FAECE7;
   --bar: #c4a882;
   --barh: #8b3a2a;
-  --fd: 'Playfair Display', Georgia, serif;
-  --fm: 'Source Code Pro', 'SF Mono', Menlo, monospace;
-  --fs: 'Noto Serif SC', serif;
+  --fd: var(--font-display);
+  --fm: var(--font-mono);
+  --fs: var(--font-serif-sc);
 }
 
 .archive-page {
