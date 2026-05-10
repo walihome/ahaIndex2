@@ -45,6 +45,9 @@ const maturityLabel: Record<string, string> = { production: 'Production', beta: 
 const maturityClass: Record<string, string> = { production: 'production', beta: 'beta', experimental: 'experimental' };
 
 const tweets: any[] = extra?.tweets || [];
+const repoCoverUrl = item.content_type === 'repo' && extra?.readme_images?.length > 0
+  ? extra.readme_images[0]
+  : undefined;
 
 function formatNumber(num: number) {
   if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
@@ -119,10 +122,10 @@ function formatNumber(num: number) {
           <p class="modal-description-en">{extra.description}</p>
         )}
 
-        {item.content_type === 'repo' && extra?.readme_images?.length > 0 && (
+        {repoCoverUrl && (
           <div style="margin-bottom: 24px;" class="repo-cover-wrap">
             <img
-              src={extra.readme_images[0]}
+              src={repoCoverUrl}
               alt="封面图"
               loading="lazy"
               width="800"
@@ -135,7 +138,7 @@ function formatNumber(num: number) {
 
         {(() => {
           const videoUrl = extra?.media_urls?.find((u: string) => /\.(mp4|webm|mov)(\?|#|$)/i.test(u));
-          const imageUrl = extra?.media_urls?.find((u: string) => /\.(png|jpg|jpeg|webp|gif)(\?|#|$)/i.test(u));
+          const imageUrl = repoCoverUrl ? undefined : extra?.media_urls?.find((u: string) => /\.(png|jpg|jpeg|webp|gif)(\?|#|$)/i.test(u));
           if (videoUrl) return (
             <div style="margin-bottom: 24px;">
               <video src={videoUrl} poster={extra.thumbnail_url || undefined} controls muted playsinline preload="metadata" style="width: 100%; height: auto; border-radius: 6px; border: 1px solid var(--border); background: #000;" />
