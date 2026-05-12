@@ -40,52 +40,65 @@ jobs:
         env:
           OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
           OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
-          OSS_ENDPOINT: https://oss-cn-hangzhou.aliyuncs.com
-          OSS_REGION: cn-hangzhou
         run: |
-          CREDS="--endpoint $OSS_ENDPOINT --access-key-id $OSS_ACCESS_KEY_ID --access-key-secret $OSS_ACCESS_KEY_SECRET --region $OSS_REGION"
+          set -euo pipefail
+          CREDS="--endpoint https://oss-cn-hangzhou.aliyuncs.com --access-key-id $OSS_ACCESS_KEY_ID --access-key-secret $OSS_ACCESS_KEY_SECRET --region cn-hangzhou"
 
-          # Static assets (JS/CSS with hashes) - long-term cache
+          # 清理 staging 残留
+          echo "🧹 清理 __test__/ 目录..."
+          ossutil rm oss://amazingindex/__test__/ --recursive --force $CREDS || true
+          echo "✅ staging 清理完成"
+
+          START=$(date +%s)
+
+          # 1. _astro 长缓存（后台）
           ossutil sync ./dist/_astro/ oss://amazingindex/_astro/ \
-            --force \
+            --force -j 20 \
             --metadata "Cache-Control=max-age=31536000,immutable" \
-            $CREDS
+            $CREDS &
+          PID_ASTRO=$!
 
-          # HTML pages - no cache (always serve latest)
-          find ./dist -name "*.html" | while read f; do
-            rel="${f#./dist/}"
-            ossutil cp "$f" "oss://amazingindex/$rel" \
-              --force \
-              --metadata "Cache-Control=no-cache" \
-              --content-type "text/html; charset=utf-8" \
-              $CREDS
+          # 2. HTML 文件（后台）
+          mkdir -p /tmp/html-stage
+          rsync -a --include='*/' --include='*.html' --exclude='*' \
+            --exclude='_astro/***' \
+            ./dist/ /tmp/html-stage/
 
-            # For directory-style routes (e.g. article/xxx/index.html),
-            # also upload as article/xxx so bare URLs work without trailing slash
-            dir="$(dirname "$rel")"
-            base="$(basename "$rel")"
-            if [ "$base" = "index.html" ] && [ "$dir" != "." ]; then
-              ossutil cp "$f" "oss://amazingindex/$dir" \
-                --force \
-                --metadata "Cache-Control=no-cache" \
-                --content-type "text/html; charset=utf-8" \
-                $CREDS
-            fi
-          done
+          ossutil sync /tmp/html-stage/ oss://amazingindex/ \
+            --force -j 20 \
+            --metadata "Cache-Control=no-cache" \
+            --metadata "Content-Type=text/html; charset=utf-8" \
+            $CREDS &
+          PID_HTML=$!
 
-          # Other static files (robots.txt, sitemap, favicon, etc.)
-          for f in ./dist/robots.txt ./dist/favicon.svg ./dist/favicon.ico; do
-            [ -f "$f" ] && ossutil cp "$f" "oss://amazingindex/$(basename $f)" --force $CREDS
-          done
+          # 3. 其他静态文件 robots/favicon/sitemap（后台）
+          ossutil sync ./dist/ oss://amazingindex/ \
+            --force -j 10 \
+            --exclude "*.html" \
+            --exclude "_astro/*" \
+            $CREDS &
+          PID_REST=$!
 
-          # Sitemap files
-          find ./dist -name "sitemap*.xml" | while read f; do
-            rel="${f#./dist/}"
-            ossutil cp "$f" "oss://amazingindex/$rel" \
-              --force \
-              --metadata "Cache-Control=max-age=3600" \
-              $CREDS
-          done
+          wait $PID_ASTRO $PID_HTML $PID_REST
+          echo "✅ 三路并行上传完成"
+
+          # 4. bare URL：基于本地 dist 生成 OSS 内部复制
+          find ./dist -name 'index.html' \
+            | grep -v '^\./dist/index.html$' \
+            | sed 's|^\./dist/||' \
+            | while read rel; do
+                key="${rel%/index.html}"
+                ossutil cp "oss://amazingindex/$rel" "oss://amazingindex/$key" \
+                  --force \
+                  --metadata "Cache-Control=no-cache" \
+                  --metadata "Content-Type=text/html; charset=utf-8" \
+                  $CREDS &
+                if [ $(jobs -r | wc -l) -ge 20 ]; then wait -n; fi
+              done
+          wait
+
+          END=$(date +%s)
+          echo "✅ 部署完成，总耗时 $((END-START))s"
 
       - name: Refresh CDN
         env:
