@@ -1,28 +1,29 @@
 ---
 import ArticleLayout from '../../layouts/ArticleLayout.astro';
+import type { ArticleRouteItem } from '../../lib/data';
 import { getAllArticleRouteItems, getItemsByDate } from '../../lib/data';
 
 export async function getStaticPaths() {
-  const routeItems = await getAllArticleRouteItems();
-  const seen = new Map<string, { processed_item_id: string; snapshot_date: string }>();
-  for (const item of routeItems) {
-    const existing = seen.get(item.processed_item_id);
-    if (!existing || item.snapshot_date > existing.snapshot_date) {
+  const allItems = await getAllArticleRouteItems();
+  const seen = new Map<string, ArticleRouteItem>();
+  for (const item of allItems) {
+    if (!item.processed_item_id) continue;
+    if (!seen.has(item.processed_item_id)) {
       seen.set(item.processed_item_id, item);
     }
   }
   return Array.from(seen.values()).map(item => ({
     params: { pid: item.processed_item_id },
-    props: { date: item.snapshot_date },
+    props: { snapshotDate: item.snapshot_date },
   }));
 }
 
 const { pid } = Astro.params;
-const { date } = Astro.props;
+const { snapshotDate: date } = Astro.props;
 const items = await getItemsByDate(date);
 const currentIndex = items.findIndex(i => i.processed_item_id === pid);
 const item = items[currentIndex];
-if (!item) throw new Error(`Missing article ${pid} in snapshot ${date}.`);
+if (!item) throw new Error(`Missing article ${pid} in snapshot ${date}`);
 const prevItem = currentIndex > 0 ? items[currentIndex - 1] : null;
 const nextItem = currentIndex >= 0 && currentIndex < items.length - 1 ? items[currentIndex + 1] : null;
 ---

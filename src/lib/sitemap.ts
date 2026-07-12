@@ -1,8 +1,4 @@
-import {
-  getAllArticleRouteItems,
-  getAllDates,
-  getPublicDirectorySubjects,
-} from './data';
+import { getAllArticleRouteItems, getAllDates, getPublicDirectorySubjects } from './data';
 import type { ArticleRouteItem } from './data';
 
 const SITE_URL = 'https://www.amazingindex.com';
@@ -148,8 +144,7 @@ function getUniqueArticleItems(items: ArticleRouteItem[]): ArticleRouteItem[] {
 
   for (const item of items) {
     if (!item.processed_item_id) continue;
-    const existing = seen.get(item.processed_item_id);
-    if (!existing || item.snapshot_date > existing.snapshot_date) {
+    if (!seen.has(item.processed_item_id)) {
       seen.set(item.processed_item_id, item);
     }
   }
