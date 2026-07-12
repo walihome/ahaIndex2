@@ -137,13 +137,18 @@ export async function getItemByPid(
   return (data?.[0] as ProcessedItem) ?? null;
 }
 
-export const getAllItems = memo<ProcessedItem[]>('allItems', async () => {
-  return fetchAllRows<ProcessedItem>((from, to) =>
+export interface ArticleRouteItem {
+  id: string;
+  processed_item_id: string;
+  snapshot_date: string;
+}
+
+export const getAllArticleRouteItems = memo<ArticleRouteItem[]>('allArticleRouteItems', async () => {
+  return fetchAllRows<ArticleRouteItem>((from, to) =>
     supabase
       .from(TABLE)
-      .select('*')
+      .select('id, processed_item_id, snapshot_date')
       .order('snapshot_date', { ascending: false })
-      .order('rank', { ascending: true })
       .order('processed_item_id', { ascending: true })
       .range(from, to),
   );

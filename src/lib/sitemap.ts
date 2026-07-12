@@ -1,5 +1,5 @@
-import { getAllDates, getAllItems, getPublicDirectorySubjects } from './data';
-import type { ProcessedItem } from './types';
+import { getAllArticleRouteItems, getAllDates, getPublicDirectorySubjects } from './data';
+import type { ArticleRouteItem } from './data';
 
 const SITE_URL = 'https://www.amazingindex.com';
 const STATIC_PATHS = ['/', '/about', '/contact', '/history', '/privacy', '/terms'];
@@ -139,8 +139,8 @@ export async function getSitemapIndexEntries(): Promise<SitemapIndexEntry[]> {
   ];
 }
 
-function getUniqueArticleItems(items: ProcessedItem[]): ProcessedItem[] {
-  const seen = new Map<string, ProcessedItem>();
+function getUniqueArticleItems(items: ArticleRouteItem[]): ArticleRouteItem[] {
+  const seen = new Map<string, ArticleRouteItem>();
 
   for (const item of items) {
     if (!item.processed_item_id) continue;
@@ -153,7 +153,7 @@ function getUniqueArticleItems(items: ProcessedItem[]): ProcessedItem[] {
 }
 
 export function getArticleSitemapEntriesForYear(
-  items: ProcessedItem[],
+  items: ArticleRouteItem[],
   year: string,
 ): SitemapEntry[] {
   const entries: SitemapEntry[] = [];
@@ -171,7 +171,7 @@ export function getArticleSitemapEntriesForYear(
 }
 
 export async function getArticleSitemapYears(): Promise<string[]> {
-  const items = getUniqueArticleItems(await getAllItems());
+  const items = getUniqueArticleItems(await getAllArticleRouteItems());
   const years = new Set<string>();
 
   for (const item of items) {
@@ -186,6 +186,6 @@ export async function getArticleSitemapYears(): Promise<string[]> {
 export async function getArticleSitemapEntriesByYear(
   year: string,
 ): Promise<SitemapEntry[]> {
-  const items = getUniqueArticleItems(await getAllItems());
+  const items = getUniqueArticleItems(await getAllArticleRouteItems());
   return getArticleSitemapEntriesForYear(items, year);
 }
